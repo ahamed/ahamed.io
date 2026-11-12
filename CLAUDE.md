@@ -33,6 +33,9 @@ TypeScript is pinned to `6.0.3`. Do not upgrade to TS 7 until typescript-eslint'
 1. **Plan with `/grill-me`.** When planning or proposing any new feature, run the `/grill-me` skill. Ask **one question at a time** with the **AskUserQuestion** tool, never several questions in plain text. Put the recommended option first, labelled "(Recommended)", and wait for each answer before asking the next.
 2. **OpenSpec for every feature.** Proposal → specs/design/tasks → implement (`/opsx:apply`) → archive (`/opsx:archive`). Changes live in `openspec/changes/`, and accepted specs in `openspec/specs/`. Each milestone in `plan.md` is one change.
 3. **TDD, red → green → refactor.** Write a failing test first and run it to watch it fail. Write the minimal code that makes it pass, then refactor. Never write production code without a failing test. Tooling and config are verified by planting a violation and watching the gate fail.
+4. **Report after `/opsx:apply`.** When an apply run finishes or pauses, end the output with these two sections:
+   - **What changed.** List each completed task (number and short description). Under each task, name the files it created or changed and the behaviour it added, so the reader can tell which changes are done. Name tasks that are still open, and any deviations from the design, with the reason for each.
+   - **How to check it manually.** Give numbered steps the user can follow themselves. Each step has the exact command or URL (e.g. `pnpm dev`, then open `http://localhost:5173`), what to do (scroll, press a key, resize to phone width), and what they should see. Cover every user-visible behaviour in the change's spec scenarios. For tooling-only changes, give a command plus its expected output, or a violation to plant and the failure to expect.
 
 ## Architecture
 
