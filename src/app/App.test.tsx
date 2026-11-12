@@ -1,16 +1,39 @@
-import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { App } from './App';
+import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const webgl = vi.hoisted(() => ({ supported: false }));
+vi.mock('../scene/webgl', () => ({ canUseWebGL: () => webgl.supported }));
+vi.mock('../scene/Voyage', () => ({ default: () => <div data-testid="voyage" /> }));
+
+const { App } = await import('./App');
+
+beforeEach(() => {
+  webgl.supported = false;
+});
 
 describe('App shell', () => {
   it('renders one main landmark containing the site owner heading', () => {
     render(<App />);
-
     const mains = screen.getAllByRole('main');
     expect(mains).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1, name: 'Sajeeb Ahamed' })).toBeInTheDocument();
+  });
 
-    const [main] = mains;
-    if (!main) throw new Error('main landmark missing');
-    expect(within(main).getByRole('heading', { level: 1 })).toHaveTextContent('Sajeeb Ahamed');
+  it('keeps the heading visually hidden but accessible', () => {
+    render(<App />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveClass('visually-hidden');
+  });
+
+  it('shows a fallback message when WebGL is unavailable', () => {
+    render(<App />);
+    expect(screen.getByText(/3D view not supported/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('voyage')).toBeNull();
+  });
+
+  it('mounts the voyage and one dialog per stop when WebGL is available', async () => {
+    webgl.supported = true;
+    render(<App />);
+    expect(await screen.findByTestId('voyage')).toBeInTheDocument();
+    expect(document.querySelectorAll('[data-stop]')).toHaveLength(2);
   });
 });

@@ -1,0 +1,17 @@
+.voyage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.fallback {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 1.5rem;
+  font-family: var(--font-mono);
+  text-align: center;
+}

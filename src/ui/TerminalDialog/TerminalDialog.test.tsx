@@ -1,0 +1,69 @@
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { STOPS } from '../../content/journey';
+import { dialogElements } from './registry';
+import { TerminalDialog } from './TerminalDialog';
+
+const earth = STOPS[0];
+const moon = STOPS[1];
+if (!earth || !moon) throw new Error('fixture stops missing');
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+describe('TerminalDialog', () => {
+  it('is a region named by the card title when open', () => {
+    render(<TerminalDialog stop={earth} open />);
+    const region = screen.getByRole('region', { name: earth.title });
+    expect(region).toHaveAttribute('data-state', 'open');
+  });
+
+  it('is hidden from the accessibility tree when closed', () => {
+    render(<TerminalDialog stop={earth} open={false} />);
+    expect(screen.queryByRole('region')).toBeNull();
+    expect(document.querySelector('[data-stop="earth"]')).toHaveAttribute('data-state', 'closed');
+  });
+
+  it('exposes the full text while the typewriter is still revealing', () => {
+    render(<TerminalDialog stop={earth} open />);
+    const region = screen.getByRole('region', { name: earth.title });
+    expect(region).toHaveTextContent(earth.text);
+  });
+
+  it('reveals the visible text over time', () => {
+    render(<TerminalDialog stop={earth} open />);
+    const typed = document.querySelector('[data-typewriter]');
+    expect(typed?.textContent.length).toBeLessThan(earth.text.length);
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(typed?.textContent).toBe(earth.text);
+  });
+
+  it('renders verified links only', () => {
+    render(<TerminalDialog stop={earth} open />);
+    expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+      'href',
+      'https://github.com/ahamed',
+    );
+    expect(screen.queryByRole('link', { name: 'LinkedIn' })).toBeNull();
+  });
+
+  it('lists timeline entries in order', () => {
+    render(<TerminalDialog stop={moon} open />);
+    const items = screen.getAllByRole('listitem').map((li) => li.textContent);
+    expect(items[0]).toContain('Ezzytech');
+    expect(items.at(-1)).toContain('Ollyo');
+  });
+
+  it('registers its element so the frame loop can position it', () => {
+    const { unmount } = render(<TerminalDialog stop={earth} open />);
+    expect(dialogElements.get('earth')).toBeInstanceOf(HTMLElement);
+    unmount();
+    expect(dialogElements.has('earth')).toBe(false);
+  });
+});

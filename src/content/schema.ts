@@ -1,0 +1,68 @@
+import { z } from 'zod';
+
+const MAX_WORDS = 120;
+
+export const countWords = (text: string): number =>
+  text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+
+const linkSchema = z.object({
+  label: z.string().min(1),
+  href: z.url(),
+  verified: z.boolean(),
+});
+
+const timelineEntrySchema = z.object({
+  id: z.string().min(1),
+  org: z.string().min(1),
+  role: z.string().min(1),
+  start: z.number().int(),
+  end: z.union([z.number().int(), z.literal('present')]),
+  verified: z.boolean(),
+});
+
+export const bodySchema = z.enum(['earth', 'moon']);
+
+export const stopSchema = z.object({
+  id: z.string().min(1),
+  body: bodySchema,
+  title: z.string().min(1),
+  text: z.string().refine((t) => countWords(t) >= 1 && countWords(t) <= MAX_WORDS, {
+    message: `text must be 1-${String(MAX_WORDS)} words`,
+  }),
+  timeline: z.array(timelineEntrySchema),
+  links: z.array(linkSchema),
+});
+
+export type Stop = z.infer<typeof stopSchema>;
+export type BodyId = z.infer<typeof bodySchema>;
+export type StopLink = Stop['links'][number];
+export type TimelineEntry = Stop['timeline'][number];
+
+export type ValidationResult = { success: true; stops: Stop[] } | { success: false; error: string };
+
+export function validateStops(input: readonly unknown[]): ValidationResult {
+  const stops: Stop[] = [];
+  const seen = new Set<string>();
+
+  for (const [index, raw] of input.entries()) {
+    const parsed = stopSchema.safeParse(raw);
+    const label = describe(raw, index);
+    if (!parsed.success) {
+      return { success: false, error: `${label}: ${z.prettifyError(parsed.error)}` };
+    }
+    if (seen.has(parsed.data.id)) {
+      return { success: false, error: `duplicate stop id ${label}` };
+    }
+    seen.add(parsed.data.id);
+    stops.push(parsed.data);
+  }
+
+  return { success: true, stops };
+}
+
+function describe(raw: unknown, index: number): string {
+  if (typeof raw === 'object' && raw !== null && 'id' in raw && typeof raw.id === 'string') {
+    return `stop "${raw.id}"`;
+  }
+  return `stop #${String(index)}`;
+}

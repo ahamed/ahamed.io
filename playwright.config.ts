@@ -13,7 +13,21 @@ export default defineConfig({
     baseURL: `http://localhost:${String(port)}`,
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: /no-webgl\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'no-webgl',
+      testMatch: /no-webgl\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: { args: ['--disable-webgl', '--disable-3d-apis', '--disable-gpu'] },
+      },
+    },
+  ],
   webServer: {
     command: `pnpm build && pnpm preview --port ${String(port)} --strictPort`,
     url: `http://localhost:${String(port)}`,

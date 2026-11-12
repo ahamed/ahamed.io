@@ -2,4 +2,5 @@
   --color-bg: #0f1726;
   --color-panel: rgba(30, 58, 64, 0.72);
   --color-accent: #67d3c1;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }

@@ -1,0 +1,116 @@
+.dialog {
+  --x: 50vw;
+  --y: 50vh;
+  --scale: 1;
+  --opacity: 1;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(26rem, 40vw);
+  padding: 1rem 1.25rem;
+  background: var(--color-panel);
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  border-radius: 0.5rem;
+  box-shadow: 0 0 2rem color-mix(in srgb, var(--color-accent) 12%, transparent);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  opacity: var(--opacity);
+  /* Sit to the left of the anchor (the body's left limb), never past the left edge. */
+  transform: translate3d(max(1rem, calc(var(--x) - 100% - 1.5rem)), var(--y), 0) translateY(-50%)
+    scale(var(--scale));
+  transform-origin: right center;
+  pointer-events: auto;
+  will-change: transform, opacity;
+}
+
+.dialog[hidden] {
+  display: none;
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.prompt {
+  opacity: 0.6;
+}
+
+.text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: blink 1s steps(1) infinite;
+}
+
+.timeline,
+.links {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li + li {
+  margin-top: 0.25rem;
+}
+
+.years {
+  display: inline-block;
+  min-width: 6.5rem;
+  opacity: 0.7;
+}
+
+.links {
+  display: flex;
+  gap: 1rem;
+}
+
+.links a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+.links a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dialog {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    max-height: 55vh;
+    overflow-y: auto;
+    border-radius: 0.75rem 0.75rem 0 0;
+    border-bottom: 0;
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+}
