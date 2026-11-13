@@ -70,3 +70,29 @@ test.describe('voyage on a phone', () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 });
+
+test.describe('voyage assets', () => {
+  test('Voyager needs no environment maps or extra textures, and logs no errors', async ({
+    page,
+  }) => {
+    const requests: string[] = [];
+    const errors: string[] = [];
+    page.on('request', (request) => requests.push(new URL(request.url()).pathname));
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    page.on('pageerror', (error) => errors.push(error.message));
+
+    await page.goto('/');
+    await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
+
+    expect(requests.filter((path) => /\.(hdr|exr)$/i.test(path))).toEqual([]);
+    const images = requests.filter((path) => /\.(jpe?g|png|webp|avif|ktx2)$/i.test(path));
+    expect(images.sort()).toEqual([
+      '/textures/2k_earth_clouds.jpg',
+      '/textures/2k_earth_daymap.jpg',
+      '/textures/2k_moon.jpg',
+    ]);
+    expect(errors).toEqual([]);
+  });
+});

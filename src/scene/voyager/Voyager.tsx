@@ -1,79 +1,113 @@
-import { useMemo } from 'react';
-import { DoubleSide, Vector2 } from 'three';
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { Group, WebGLRenderer } from 'three';
+import { useReducedMotion } from '../useReducedMotion';
+import { buildVoyager, type VoyagerModel } from './build';
+import { createSpaceEnvironment } from './environment';
+import { createVoyagerMaterials, type VoyagerMaterials } from './materials';
+import { createPose, voyagerPoseInto } from './motion';
+import { PARTS, PIVOTS, type MotionGroup } from './parts';
 
-const DISH_RADIUS = 0.9;
-const DISH_DEPTH = 0.22;
-const DISH_SEGMENTS = 64;
-
-/** Parabolic dish profile (front face toward +Z once rotated). */
-function useDishProfile(): Vector2[] {
-  return useMemo(() => {
-    const points: Vector2[] = [];
-    const steps = 24;
-    for (let i = 0; i <= steps; i++) {
-      const r = (i / steps) * DISH_RADIUS;
-      points.push(new Vector2(r, (r * r * DISH_DEPTH) / (DISH_RADIUS * DISH_RADIUS)));
-    }
-    return points;
-  }, []);
+/** PMREM needs a real WebGL 2 context; jsdom and the R3F test renderer have none. */
+function canPrefilter(gl: WebGLRenderer): boolean {
+  return (
+    typeof WebGL2RenderingContext !== 'undefined' &&
+    gl.getContext() instanceof WebGL2RenderingContext
+  );
 }
 
-const FOIL = { color: '#c9a24a', metalness: 0.9, roughness: 0.35 } as const;
-const METAL = { color: '#8d939b', metalness: 0.85, roughness: 0.4 } as const;
-const DISH = { color: '#e8e6e1', metalness: 0.15, roughness: 0.55 } as const;
+function Meshes({
+  group,
+  model,
+  materials,
+}: {
+  group: MotionGroup;
+  model: VoyagerModel;
+  materials: VoyagerMaterials;
+}): ReactNode {
+  return model.buckets
+    .filter((bucket) => bucket.group === group)
+    .map((bucket) => (
+      <mesh
+        key={bucket.name}
+        name={bucket.name}
+        geometry={bucket.geometry}
+        material={materials.slots[bucket.material]}
+      />
+    ));
+}
 
 /**
- * First-pass procedural Voyager 1. Travels toward -Z with its high-gain antenna facing back
- * toward Earth (+Z), so the chase camera sees the dish. M2 adds the detailed model.
+ * Museum-grade procedural Voyager 1. Travels toward -Z with its high-gain antenna facing back
+ * toward Earth (+Z), so the chase camera sees the dish. Static parts are merged per material;
+ * the scan platform, whips and magnetometer tip are separate pivot groups that move a little,
+ * and the whole craft drifts in attitude. Motion freezes under prefers-reduced-motion.
  */
 export function Voyager(props: { position?: [number, number, number] }) {
-  const dishProfile = useDishProfile();
+  const gl = useThree((s) => s.gl);
+  const reduced = useReducedMotion();
+  const reducedRef = useRef(reduced);
+  useEffect(() => {
+    reducedRef.current = reduced;
+  }, [reduced]);
 
+  // Geometry and data textures keep their CPU data, so three re-uploads them if StrictMode
+  // disposes and reuses them. The PMREM target cannot be rebuilt that way, so it lives in an
+  // effect that creates and disposes it as a pair.
+  const model = useMemo(() => buildVoyager(PARTS), []);
+  const materials = useMemo(() => createVoyagerMaterials(null), []);
+  useEffect(
+    () => () => {
+      model.dispose();
+      materials.dispose();
+    },
+    [model, materials],
+  );
+  useEffect(() => {
+    const env = canPrefilter(gl) ? createSpaceEnvironment(gl) : null;
+    materials.setEnvironment(env?.texture ?? null);
+    return () => {
+      materials.setEnvironment(null);
+      env?.dispose();
+    };
+  }, [gl, materials]);
+
+  const attitude = useRef<Group>(null);
+  const scan = useRef<Group>(null);
+  const whipL = useRef<Group>(null);
+  const whipR = useRef<Group>(null);
+  const magTip = useRef<Group>(null);
+  const [pose] = useState(createPose);
+  const elapsed = useRef(0);
+
+  useFrame((_, dt) => {
+    elapsed.current += Math.min(dt, 0.1);
+    voyagerPoseInto(pose, elapsed.current, reducedRef.current);
+    attitude.current?.rotation.set(pose.attitude[0], pose.attitude[1], pose.attitude[2]);
+    scan.current?.rotation.set(pose.scanTilt, pose.scanPan, 0);
+    whipL.current?.rotation.set(pose.whipL, 0, pose.whipL * 0.5);
+    whipR.current?.rotation.set(pose.whipR, 0, pose.whipR * 0.5);
+    magTip.current?.rotation.set(pose.magTip, 0, pose.magTip);
+  });
+
+  const shared = { model, materials };
   return (
     <group {...props} scale={0.45}>
-      {/* High-gain antenna: lathe opens along +Y, rotated to face +Z. */}
-      <mesh name="hga" rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.25]}>
-        <latheGeometry args={[dishProfile, DISH_SEGMENTS]} />
-        <meshStandardMaterial {...DISH} side={DoubleSide} />
-      </mesh>
-      <mesh name="feed" position={[0, 0, 0.75]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.03, 0.03, 0.5, 12]} />
-        <meshStandardMaterial {...METAL} />
-      </mesh>
-
-      {/* Ten-sided bus behind the dish. */}
-      <mesh name="bus" rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -0.05]}>
-        <cylinderGeometry args={[0.48, 0.48, 0.38, 10]} />
-        <meshStandardMaterial {...FOIL} />
-      </mesh>
-
-      {/* RTG boom with three generator canisters. */}
-      <mesh name="rtg-boom" position={[-1.1, -0.15, -0.1]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.025, 0.025, 1.6, 8]} />
-        <meshStandardMaterial {...METAL} />
-      </mesh>
-      {[-1.45, -1.7, -1.95].map((x) => (
-        <mesh key={x} name="rtg" position={[x, -0.15, -0.1]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.1, 0.1, 0.22, 16]} />
-          <meshStandardMaterial color="#3b3f45" metalness={0.6} roughness={0.5} />
-        </mesh>
-      ))}
-
-      {/* Science boom with the scan platform. */}
-      <mesh name="science-boom" position={[1.05, 0.05, -0.1]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.03, 0.03, 1.5, 8]} />
-        <meshStandardMaterial {...METAL} />
-      </mesh>
-      <mesh name="scan-platform" position={[1.85, 0.05, -0.1]}>
-        <boxGeometry args={[0.28, 0.22, 0.22]} />
-        <meshStandardMaterial {...FOIL} />
-      </mesh>
-
-      {/* Long magnetometer boom, angled up and out. */}
-      <mesh name="mag-boom" position={[1.6, 1.35, -0.2]} rotation={[0, 0, -Math.PI / 4.5]}>
-        <cylinderGeometry args={[0.012, 0.012, 3.6, 6]} />
-        <meshStandardMaterial {...METAL} />
-      </mesh>
+      <group name="attitude" ref={attitude}>
+        <Meshes group="static" {...shared} />
+        <group name="scan" ref={scan} position={PIVOTS.scan}>
+          <Meshes group="scan" {...shared} />
+        </group>
+        <group name="whip-l" ref={whipL} position={PIVOTS['whip-l']}>
+          <Meshes group="whip-l" {...shared} />
+        </group>
+        <group name="whip-r" ref={whipR} position={PIVOTS['whip-r']}>
+          <Meshes group="whip-r" {...shared} />
+        </group>
+        <group name="mag-tip" ref={magTip} position={PIVOTS['mag-tip']}>
+          <Meshes group="mag-tip" {...shared} />
+        </group>
+      </group>
     </group>
   );
 }

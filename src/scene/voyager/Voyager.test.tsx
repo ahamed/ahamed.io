@@ -1,16 +1,138 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer';
-import { describe, expect, it } from 'vitest';
+import {
+  BufferGeometry,
+  Group,
+  Material,
+  Mesh,
+  MeshStandardMaterial,
+  Texture,
+  type Scene,
+  type Object3D,
+} from 'three';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { STOPS } from '../../content/journey';
+import { buildRoute } from '../../journey/route';
+import { Bodies } from '../bodies/Bodies';
+import { PARTS, REQUIRED_PARTS } from './parts';
 import { Voyager } from './Voyager';
 
+const MOVING = ['scan', 'whip-l', 'whip-r', 'mag-tip'] as const;
+
+function stubReducedMotion(matches: boolean) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({ matches, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+  );
+}
+
+function findGroup(scene: Object3D, name: string): Group {
+  const found = scene.getObjectByName(name);
+  if (!(found instanceof Group)) throw new Error(`group ${name} not found`);
+  return found as Group;
+}
+
+function meshes(root: Object3D): Mesh[] {
+  const out: Mesh[] = [];
+  root.traverse((o) => {
+    if (o instanceof Mesh) out.push(o as Mesh);
+  });
+  return out;
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe('Voyager', () => {
-  it('has the recognisable Voyager 1 parts', async () => {
+  it('is built from the full museum-grade part list', () => {
+    const ids = PARTS.map((p) => p.id);
+    for (const id of REQUIRED_PARTS) expect(ids).toContain(id);
+    expect(PARTS.length).toBeGreaterThanOrEqual(100);
+  });
+
+  it('renders merged meshes within the draw-call budget, under an attitude group', async () => {
+    stubReducedMotion(false);
     const renderer = await ReactThreeTestRenderer.create(<Voyager />);
-    const names = renderer.scene
-      .findAll((node) => node.type === 'Mesh')
-      .map((m) => m.instance.name);
-    for (const part of ['hga', 'bus', 'rtg-boom', 'mag-boom', 'science-boom']) {
-      expect(names).toContain(part);
+    const scene = renderer.scene.instance;
+    const attitude = findGroup(scene, 'attitude');
+    for (const name of MOVING) expect(attitude.getObjectByName(name)).toBeInstanceOf(Group);
+    const all = meshes(scene);
+    expect(all.length).toBeGreaterThan(0);
+    expect(all.length).toBeLessThanOrEqual(14);
+    expect(attitude.getObjectByName('static:dish')).toBeInstanceOf(Mesh);
+    await renderer.unmount();
+  });
+
+  it('moves the scan platform and attitude over time', async () => {
+    stubReducedMotion(false);
+    const renderer = await ReactThreeTestRenderer.create(<Voyager />);
+    const scene = renderer.scene.instance;
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(120, 1 / 20);
+    });
+    expect(findGroup(scene, 'scan').rotation.y).not.toBe(0);
+    expect(findGroup(scene, 'attitude').rotation.x).not.toBe(0);
+    await renderer.unmount();
+  });
+
+  it('holds the neutral pose under reduced motion', async () => {
+    stubReducedMotion(true);
+    const renderer = await ReactThreeTestRenderer.create(<Voyager />);
+    const scene = renderer.scene.instance;
+    for (let i = 0; i < 3; i++) {
+      await ReactThreeTestRenderer.act(async () => {
+        await renderer.advanceFrames(30, 1 / 10);
+      });
+      for (const name of ['attitude', ...MOVING]) {
+        const { x, y, z } = findGroup(scene, name).rotation;
+        expect([x, y, z], name).toEqual([0, 0, 0]);
+      }
     }
     await renderer.unmount();
+  });
+
+  it('leaves scene.environment unset so Earth and the Moon get no Voyager reflections', async () => {
+    stubReducedMotion(false);
+    const renderer = await ReactThreeTestRenderer.create(
+      <>
+        <Bodies route={buildRoute(STOPS)} />
+        <Voyager />
+      </>,
+    );
+    const scene = renderer.scene.instance as Scene;
+    expect(scene.environment).toBeNull();
+    for (const name of ['body-earth', 'body-moon']) {
+      const body = scene.getObjectByName(name);
+      if (!body) throw new Error(`${name} not found`);
+      for (const mesh of meshes(body)) {
+        const material = mesh.material as Material;
+        if (material instanceof MeshStandardMaterial) expect(material.envMap).toBeNull();
+      }
+    }
+    await renderer.unmount();
+  });
+
+  it('disposes every geometry, material and texture it created on unmount', async () => {
+    stubReducedMotion(false);
+    const geometrySpy = vi.spyOn(BufferGeometry.prototype, 'dispose');
+    const materialSpy = vi.spyOn(Material.prototype, 'dispose');
+    const textureSpy = vi.spyOn(Texture.prototype, 'dispose');
+    const renderer = await ReactThreeTestRenderer.create(<Voyager />);
+    const all = meshes(renderer.scene.instance);
+    const geometries = all.map((m) => m.geometry);
+    const materials = [...new Set(all.map((m) => m.material as MeshStandardMaterial))];
+    const textures = materials.flatMap((m) =>
+      [m.normalMap, m.roughnessMap].filter((t): t is Texture => t !== null),
+    );
+    expect(textures.length).toBeGreaterThanOrEqual(3);
+    geometrySpy.mockClear();
+    materialSpy.mockClear();
+    textureSpy.mockClear();
+
+    await renderer.unmount();
+
+    for (const g of geometries) expect(geometrySpy.mock.contexts).toContain(g);
+    for (const m of materials) expect(materialSpy.mock.contexts).toContain(m);
+    for (const t of textures) expect(textureSpy.mock.contexts).toContain(t);
   });
 });

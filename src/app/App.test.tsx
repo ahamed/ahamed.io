@@ -4,11 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const webgl = vi.hoisted(() => ({ supported: false }));
 vi.mock('../scene/webgl', () => ({ canUseWebGL: () => webgl.supported }));
 vi.mock('../scene/Voyage', () => ({ default: () => <div data-testid="voyage" /> }));
+vi.mock('../scene/voyager/Inspect', () => ({ default: () => <div data-testid="inspect" /> }));
 
 const { App } = await import('./App');
 
 beforeEach(() => {
   webgl.supported = false;
+  window.history.replaceState(null, '', '/');
 });
 
 describe('App shell', () => {
@@ -35,5 +37,15 @@ describe('App shell', () => {
     render(<App />);
     expect(await screen.findByTestId('voyage')).toBeInTheDocument();
     expect(document.querySelectorAll('[data-stop]')).toHaveLength(2);
+  });
+
+  it('shows the dev-only inspector instead of the voyage with ?inspect', async () => {
+    webgl.supported = true;
+    window.history.replaceState(null, '', '/?inspect');
+    render(<App />);
+    expect(await screen.findByTestId('inspect')).toBeInTheDocument();
+    expect(screen.queryByTestId('voyage')).toBeNull();
+    expect(document.querySelectorAll('[data-stop]')).toHaveLength(0);
+    expect(screen.getByRole('heading', { level: 1, name: 'Sajeeb Ahamed' })).toBeInTheDocument();
   });
 });
