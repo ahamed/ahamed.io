@@ -1,5 +1,6 @@
 import {
   BufferGeometry,
+  Vector3,
   Material,
   Texture,
   type PMREMGenerator,
@@ -7,6 +8,7 @@ import {
   type WebGLRenderer,
 } from 'three';
 import { describe, expect, it, vi } from 'vitest';
+import { SUN_DIRECTION } from '../space/sunDirection';
 import { createSpaceEnvironment } from './environment';
 
 function stubPmrem() {
@@ -43,6 +45,15 @@ describe('createSpaceEnvironment', () => {
     // Sky, warm sun patch and blue fill.
     expect(pmrem.scene()?.children.length).toBeGreaterThanOrEqual(3);
     expect(pmrem.generator.dispose).toHaveBeenCalled();
+  });
+
+  it('puts the warm sun patch along the shared Sun direction', () => {
+    const pmrem = stubPmrem();
+    createSpaceEnvironment(fakeRenderer, pmrem.factory);
+    const sun = pmrem.scene()?.getObjectByName('sun');
+    if (!sun) throw new Error('no sun patch');
+    const direction = sun.position.clone().normalize();
+    expect(direction.angleTo(new Vector3(...SUN_DIRECTION))).toBeLessThan(1e-9);
   });
 
   it('disposes the throwaway scene straight away and the target on dispose()', () => {

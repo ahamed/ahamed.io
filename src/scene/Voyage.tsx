@@ -4,26 +4,38 @@ import { ACESFilmicToneMapping, SRGBColorSpace, type Group } from 'three';
 import { journeyStore, ROUTE } from '../store/journey';
 import { Bodies } from './bodies/Bodies';
 import { CameraRig } from './CameraRig';
+import { Lights } from './Lights';
+import { PostFX } from './space/PostFX';
+import { SpaceEnvironment } from './space/SpaceEnvironment';
+import { SpeedDust } from './space/SpeedDust';
 import { Voyager } from './voyager/Voyager';
 
 /** The 3D voyage. Default export so it can be code-split with React.lazy. */
 export default function Voyage() {
   const voyager = useRef<Group>(null);
+  const sky = useRef<Group>(null);
   return (
     <Canvas
       dpr={[1, 2]}
       camera={{ fov: 50, near: 0.1, far: 5000, position: [0, 2.2, 7] }}
-      gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, outputColorSpace: SRGBColorSpace }}
+      // The post pass multisamples, so the canvas itself needs no antialiasing.
+      gl={{
+        antialias: false,
+        toneMapping: ACESFilmicToneMapping,
+        outputColorSpace: SRGBColorSpace,
+      }}
       aria-hidden="true"
     >
       <color attach="background" args={['#000000']} />
-      <ambientLight intensity={0.08} />
-      <directionalLight position={[-40, 18, 30]} intensity={2.6} />
+      <Lights />
+      <SpaceEnvironment ref={sky} />
       <group ref={voyager}>
         <Voyager />
       </group>
       <Bodies route={ROUTE} />
-      <CameraRig route={ROUTE} store={journeyStore} voyager={voyager} />
+      <SpeedDust />
+      <CameraRig route={ROUTE} store={journeyStore} voyager={voyager} sky={sky} />
+      <PostFX />
     </Canvas>
   );
 }

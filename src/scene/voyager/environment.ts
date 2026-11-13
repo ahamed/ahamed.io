@@ -1,3 +1,4 @@
+import { SUN_DIRECTION } from '../space/sunDirection';
 import {
   BackSide,
   BufferAttribute,
@@ -17,8 +18,8 @@ export interface SpaceEnvironment {
   dispose: () => void;
 }
 
-/** Matches the key light in Voyage.tsx so reflections and highlights agree. */
-const SUN_DIRECTION = new Vector3(-40, 18, 30).normalize();
+/** The shared Sun direction, so reflections, the key light and the Sun disc agree. */
+const SUN = new Vector3(...SUN_DIRECTION);
 const SKY_BOTTOM = new Color('#0a0f1a');
 const SKY_TOP = new Color('#22324f');
 
@@ -35,11 +36,12 @@ function skyDome(): Mesh {
   return new Mesh(geometry, new MeshBasicMaterial({ vertexColors: true, side: BackSide }));
 }
 
-function glow(direction: Vector3, radius: number, color: Color): Mesh {
+function glow(name: string, direction: Vector3, radius: number, color: Color): Mesh {
   const mesh = new Mesh(
     new SphereGeometry(radius, 16, 8),
     new MeshBasicMaterial({ color, side: BackSide }),
   );
+  mesh.name = name;
   mesh.position.copy(direction).multiplyScalar(8);
   return mesh;
 }
@@ -58,11 +60,7 @@ export function createSpaceEnvironment(
   const scene = new Scene();
   const sun = new Color('#ffd9a0').multiplyScalar(8);
   const fill = new Color('#2f5f94').multiplyScalar(1.4);
-  scene.add(
-    skyDome(),
-    glow(SUN_DIRECTION, 0.9, sun),
-    glow(SUN_DIRECTION.clone().negate(), 3, fill),
-  );
+  scene.add(skyDome(), glow('sun', SUN, 0.9, sun), glow('fill', SUN.clone().negate(), 3, fill));
 
   const generator = makePmrem(renderer);
   try {

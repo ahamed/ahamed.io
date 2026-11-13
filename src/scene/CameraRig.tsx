@@ -18,13 +18,15 @@ interface Props {
   route: Route;
   store: JourneyStore;
   voyager: RefObject<Group | null>;
+  /** Camera-following sky group (stars, Milky Way, Sun): moved with the camera, no parallax. */
+  sky?: RefObject<Group | null>;
 }
 
 /**
  * The single per-frame loop: eases progress, snaps when idle, flies the chase camera and
  * drives dialog open state + placement. Allocation-free apart from CSS var strings.
  */
-export function CameraRig({ route, store, voyager }: Props) {
+export function CameraRig({ route, store, voyager, sky }: Props) {
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
 
@@ -46,7 +48,9 @@ export function CameraRig({ route, store, voyager }: Props) {
     if (snap !== null && snap !== state.target) state.snapTo(snap);
 
     const target = store.getState().target;
-    journeyRuntime.position = damp(journeyRuntime.position, target, DAMPING, dt);
+    const previous = journeyRuntime.position;
+    journeyRuntime.position = damp(previous, target, DAMPING, dt);
+    journeyRuntime.speed = dt > 0 ? Math.abs(journeyRuntime.position - previous) / dt : 0;
     const p = journeyRuntime.position;
 
     chasePoseInto(scratch.pose, route, p);
@@ -63,6 +67,7 @@ export function CameraRig({ route, store, voyager }: Props) {
     if (nearestBody) aimTowardInto(scratch.aim, scratch.pose.lookAt, nearestBody.position, weight);
     camera.position.set(...scratch.pose.position);
     camera.lookAt(...scratch.aim);
+    sky?.current?.position.copy(camera.position);
     if (voyager.current) voyager.current.position.set(...pointAt(route, p, scratch.ship));
 
     const currentIndex = scratch.openIndex;

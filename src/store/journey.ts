@@ -70,4 +70,9 @@ export const useJourney = <T>(selector: (state: JourneyState) => T): T =>
   useStore(journeyStore, selector);
 
 /** Per-frame values mutated in the render loop (never React state). */
-export const journeyRuntime = { position: 0 };
+export const journeyRuntime = {
+  /** Eased progress shown on screen (0..1). */
+  position: 0,
+  /** How fast `position` is moving, in progress per second (0 at rest). */
+  speed: 0,
+};
