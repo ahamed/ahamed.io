@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the short synthesized sci-fi blip that plays when a stop's dialog opens, and the rule for when the browser allows sound.
+Defines the short synthesized sci-fi blip that plays when a stop's dialog opens, and the rule for when the browser allows sound (the boot panel's Begin choice).
 
 ## Requirements
 
@@ -20,16 +20,16 @@ A short (under 250 ms) synthesized blip SHALL play each time a dialog transition
 - **WHEN** the Moon dialog stays open while its scale changes
 - **THEN** no further blip plays
 
-### Requirement: Audio unlocks on first user gesture
+### Requirement: Audio unlocks with Begin
 
-Audio SHALL stay silent until the first key press, pointer press or touch on the page, and SHALL then become available. Wheel scrolling alone SHALL NOT unlock audio. A dialog that opened before the unlock SHALL NOT play a delayed blip.
+Audio SHALL stay silent until the visitor activates "Begin mission" or "Begin silently" on the boot panel, which SHALL create and resume the audio context. A dialog that opened before the unlock SHALL NOT play a delayed blip. While muted, the blip SHALL NOT play.
 
-#### Scenario: Silent before gesture
+#### Scenario: Silent before Begin
 
-- **WHEN** the Earth dialog opens on load with no prior user gesture
-- **THEN** no sound plays and no console error or warning is logged
+- **WHEN** the page has loaded and the boot panel is shown
+- **THEN** no audio context is running and no console error or warning is logged
 
-#### Scenario: Unlock on key press
+#### Scenario: Blip after Begin
 
-- **WHEN** the visitor presses any key and then reaches the Moon
+- **WHEN** the visitor activates "Begin mission" and then reaches the Moon
 - **THEN** the blip plays when the Moon dialog opens
