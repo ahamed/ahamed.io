@@ -107,7 +107,7 @@ Apart from the Milky Way texture, the space environment SHALL NOT fetch any imag
 #### Scenario: One new image
 
 - **WHEN** the voyage loads
-- **THEN** the only images requested are the Earth and Moon textures and the Milky Way texture, and no `.hdr` or `.exr` file is requested
+- **THEN** the only textures requested are the planet and moon textures and the Milky Way texture, all as `.ktx2` files, and no `.hdr` or `.exr` file is requested
 
 #### Scenario: Resources released
 
