@@ -2,10 +2,14 @@ import { Suspense } from 'react';
 import type { BodyId } from '../../content/schema';
 import type { Route } from '../../journey/route';
 import { Earth } from './Earth';
+import { Jupiter } from './Jupiter';
 import { Mars } from './Mars';
 import { Moon } from './Moon';
+import type { MoonPresetId } from './moonPresets';
 import { Rock } from './Rock';
 import type { RockPresetId } from './rockShape';
+import { Saturn } from './Saturn';
+import { TexturedMoon } from './TexturedMoon';
 
 type BodyComponent = (props: { radius: number }) => React.JSX.Element;
 
@@ -13,6 +17,11 @@ type BodyComponent = (props: { radius: number }) => React.JSX.Element;
 const rock =
   (preset: RockPresetId): BodyComponent =>
   ({ radius }) => <Rock preset={preset} radius={radius} />;
+
+/** The gas giants' moons are textured spheres, one map preset each. */
+const texturedMoon =
+  (preset: MoonPresetId): BodyComponent =>
+  ({ radius }) => <TexturedMoon preset={preset} radius={radius} />;
 
 const BODY_COMPONENTS: Record<BodyId, BodyComponent> = {
   earth: Earth,
@@ -24,6 +33,16 @@ const BODY_COMPONENTS: Record<BodyId, BodyComponent> = {
   vesta: rock('vesta'),
   pallas: rock('pallas'),
   hygiea: rock('hygiea'),
+  jupiter: Jupiter,
+  io: texturedMoon('io'),
+  europa: texturedMoon('europa'),
+  ganymede: texturedMoon('ganymede'),
+  callisto: texturedMoon('callisto'),
+  saturn: Saturn,
+  titan: texturedMoon('titan'),
+  rhea: texturedMoon('rhea'),
+  iapetus: texturedMoon('iapetus'),
+  enceladus: texturedMoon('enceladus'),
 };
 
 /** Untextured stand-in while a body's maps load. */

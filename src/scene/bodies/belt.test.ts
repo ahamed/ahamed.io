@@ -96,4 +96,14 @@ describe('beltSpan', () => {
     expect(zEnd).toBeLessThan(z('hygiea'));
     expect(zEnd).toBeGreaterThan(-route.length);
   });
+
+  it('ends halfway between Hygiea and Jupiter, so no belt rock reaches the gas giants', () => {
+    expect(beltSpan(route).zEnd).toBeCloseTo((z('hygiea') + z('jupiter')) / 2, 9);
+  });
+
+  it('ends halfway to the route end when Hygiea is the last body', () => {
+    const inner = buildRoute(STOPS.slice(0, STOPS.findIndex((s) => s.id === 'hygiea') + 1));
+    const zi = (id: string) => inner.bodies.find((b) => b.id === id)?.position[2] ?? NaN;
+    expect(beltSpan(inner).zEnd).toBeCloseTo((zi('hygiea') - inner.length) / 2, 9);
+  });
 });

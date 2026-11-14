@@ -40,8 +40,26 @@ describe('validateStops', () => {
     expect(result.success).toBe(false);
   });
 
-  it('accepts every inner-system body', () => {
-    const bodies = ['mars', 'phobos', 'deimos', 'ceres', 'vesta', 'pallas', 'hygiea'] as const;
+  it('accepts every inner-system and gas-giant body', () => {
+    const bodies = [
+      'mars',
+      'phobos',
+      'deimos',
+      'ceres',
+      'vesta',
+      'pallas',
+      'hygiea',
+      'jupiter',
+      'io',
+      'europa',
+      'ganymede',
+      'callisto',
+      'saturn',
+      'titan',
+      'rhea',
+      'iapetus',
+      'enceladus',
+    ] as const;
     const stops = bodies.map((body) => ({ ...validStop, id: body, body }));
     expect(validateStops(stops).success).toBe(true);
   });

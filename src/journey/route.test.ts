@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { STOPS } from '../content/journey';
-import { buildRoute, END_SLACK, gapWeights, MIN_GAP_WEIGHT, pointAt, type Vec3 } from './route';
+import {
+  BODY_INFO,
+  buildRoute,
+  END_SLACK,
+  gapWeights,
+  MIN_GAP_WEIGHT,
+  PATH_CLEARANCE,
+  pointAt,
+  type Vec3,
+} from './route';
 
 describe('buildRoute', () => {
   const route = buildRoute(STOPS);
@@ -45,7 +54,7 @@ describe('buildRoute', () => {
           a.position[1] - b.position[1],
           a.position[2] - b.position[2],
         );
-        expect(d, `${a.id}/${b.id}`).toBeGreaterThan(a.radius + b.radius);
+        expect(d, `${a.id}/${b.id}`).toBeGreaterThan(a.footprint + b.footprint);
       }
     }
   });
@@ -72,6 +81,52 @@ describe('buildRoute', () => {
     for (const body of route.bodies) {
       expect(Math.hypot(body.position[0], body.position[1])).toBeGreaterThan(body.radius);
     }
+  });
+
+  it('keeps every footprint (Saturn’s rings included) clear of the flight path', () => {
+    for (const body of route.bodies) {
+      const clearance = Math.hypot(body.position[0], body.position[1]) - body.footprint;
+      expect(clearance, body.id).toBeGreaterThanOrEqual(PATH_CLEARANCE);
+    }
+  });
+
+  it('gives Saturn a footprint out to its rings and every other body its own radius', () => {
+    for (const body of route.bodies) {
+      if (body.body === 'saturn') expect(body.footprint).toBeGreaterThan(2 * body.radius);
+      else expect(body.footprint, body.id).toBe(body.radius);
+    }
+  });
+
+  it('keeps bodies without rings at 2.3 radii beside the route, as before footprints', () => {
+    for (const body of route.bodies) {
+      if (body.body === 'saturn') continue;
+      expect(Math.abs(body.position[0]), body.id).toBeCloseTo(2.3 * body.radius, 9);
+    }
+  });
+
+  it('puts the gas giants and their moons after Hygiea, moons alternating behind each planet', () => {
+    const x = (id: string) => route.bodies.find((b) => b.id === id)?.position[0] ?? NaN;
+    expect(x('jupiter')).toBeGreaterThan(0);
+    expect(x('saturn')).toBeGreaterThan(0);
+    expect([x('io'), x('europa'), x('ganymede'), x('callisto')].map(Math.sign)).toEqual([
+      -1, 1, -1, 1,
+    ]);
+    expect([x('titan'), x('rhea'), x('iapetus'), x('enceladus')].map(Math.sign)).toEqual([
+      -1, 1, -1, 1,
+    ]);
+  });
+
+  it('sizes the gas-giant moons in their real order, never below the floor', () => {
+    const r = (id: keyof typeof BODY_INFO) => BODY_INFO[id].radius;
+    expect(r('jupiter')).toBe(16);
+    expect(r('saturn')).toBe(13);
+    expect(r('ganymede')).toBeGreaterThan(r('titan'));
+    expect(r('titan')).toBeGreaterThan(r('callisto'));
+    expect(r('callisto')).toBeGreaterThan(r('io'));
+    expect(r('io')).toBeGreaterThan(r('europa'));
+    expect(r('europa')).toBeGreaterThanOrEqual(r('rhea'));
+    expect(r('rhea')).toBeGreaterThanOrEqual(r('iapetus'));
+    expect(r('iapetus')).toBeGreaterThanOrEqual(r('enceladus'));
   });
 
   it('writes positions along the path into a provided vector', () => {

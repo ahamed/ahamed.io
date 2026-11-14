@@ -1,6 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { optionsKey, sha256, staleTextures, TEXTURES, toktxArgs } from './textures-lib.mjs';
+import {
+  optionsKey,
+  sha256,
+  sourceFile,
+  staleTextures,
+  TEXTURES,
+  toktxArgs,
+} from './textures-lib.mjs';
 
 /** @param {import('./textures-lib.mjs').TextureEntry} entry */
 const fresh = (entry) => ({ source: `hash-${entry.name}`, options: optionsKey(entry) });
@@ -13,10 +20,21 @@ const allOutputs = () => true;
 describe('TEXTURES manifest', () => {
   it('lists every shipped body and sky texture once', () => {
     expect(TEXTURES.map((e) => e.name).sort()).toEqual([
+      '1k_callisto',
+      '1k_enceladus',
+      '1k_europa',
+      '1k_ganymede',
+      '1k_iapetus',
+      '1k_io',
+      '1k_rhea',
+      '1k_titan',
       '2k_earth_clouds',
       '2k_earth_daymap',
+      '2k_jupiter',
       '2k_mars',
       '2k_moon',
+      '2k_saturn',
+      '2k_saturn_ring_alpha',
       '2k_stars_milky_way',
     ]);
   });
@@ -27,6 +45,17 @@ describe('TEXTURES manifest', () => {
     for (const name of ['2k_earth_daymap', '2k_mars', '2k_moon', '2k_stars_milky_way']) {
       expect(transfer[name]).toBe('srgb');
     }
+  });
+
+  it('reads JPG sources by default and the ring strip as PNG', () => {
+    const byName = (/** @type {string} */ name) => {
+      const found = TEXTURES.find((e) => e.name === name);
+      if (!found) throw new Error(name);
+      return found;
+    };
+    expect(sourceFile(byName('2k_jupiter'))).toBe('2k_jupiter.jpg');
+    expect(sourceFile(byName('1k_io'))).toBe('1k_io.jpg');
+    expect(sourceFile(byName('2k_saturn_ring_alpha'))).toBe('2k_saturn_ring_alpha.png');
   });
 });
 
@@ -77,6 +106,15 @@ describe('toktxArgs', () => {
       'srgb',
     ]);
     expect(args.slice(-2)).toEqual(['out.ktx2', 'in.jpg']);
+  });
+
+  it('keeps the ring strip’s alpha and squeezes it to a short strip', () => {
+    const args = toktxArgs(entry('2k_saturn_ring_alpha'), 'in.png', 'out.ktx2');
+    expect(args).not.toContain('--target_type');
+    expect(args.slice(args.indexOf('--resize'), args.indexOf('--resize') + 2)).toEqual([
+      '--resize',
+      '2048x16',
+    ]);
   });
 
   it('keeps the cloud mask linear', () => {

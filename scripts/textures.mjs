@@ -1,10 +1,17 @@
-// KTX2 texture pipeline: converts assets/textures/<name>.jpg into public/textures/<name>.ktx2
+// KTX2 texture pipeline: converts assets/textures/<name>.<jpg|png> into public/textures/<name>.ktx2
 // with Khronos' toktx (KTX-Software). Outputs are committed; a lock file records what each one
 // was built from, so a clean checkout passes without toktx installed.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { optionsKey, sha256, staleTextures, TEXTURES, toktxArgs } from './textures-lib.mjs';
+import {
+  optionsKey,
+  sha256,
+  sourceFile,
+  staleTextures,
+  TEXTURES,
+  toktxArgs,
+} from './textures-lib.mjs';
 
 const sourceDir = fileURLToPath(new URL('../assets/textures/', import.meta.url));
 const outputDir = fileURLToPath(new URL('../public/textures/', import.meta.url));
@@ -14,7 +21,8 @@ const INSTALL_HELP = `toktx (KTX-Software) is needed to encode textures but was 
 Install it from https://github.com/KhronosGroup/KTX-Software/releases
 (macOS: download KTX-Software-<version>-Darwin-<arch>.pkg and run it), then re-run pnpm textures.`;
 
-const source = (/** @type {string} */ name) => `${sourceDir}${name}.jpg`;
+const source = (/** @type {import('./textures-lib.mjs').TextureEntry} */ entry) =>
+  `${sourceDir}${sourceFile(entry)}`;
 const output = (/** @type {string} */ name) => `${outputDir}${name}.ktx2`;
 
 /** @returns {Record<string, import('./textures-lib.mjs').LockEntry>} */
@@ -26,14 +34,14 @@ function readLock() {
     : {};
 }
 
-const missing = TEXTURES.filter((entry) => !existsSync(source(entry.name)));
+const missing = TEXTURES.filter((entry) => !existsSync(source(entry)));
 if (missing.length > 0) {
-  console.error(`Missing source textures: ${missing.map((e) => source(e.name)).join(', ')}`);
+  console.error(`Missing source textures: ${missing.map((e) => source(e)).join(', ')}`);
   process.exit(1);
 }
 
 const hashes = Object.fromEntries(
-  TEXTURES.map((entry) => [entry.name, sha256(readFileSync(source(entry.name)))]),
+  TEXTURES.map((entry) => [entry.name, sha256(readFileSync(source(entry)))]),
 );
 const lock = readLock();
 const stale = staleTextures(TEXTURES, lock, hashes, (name) => existsSync(output(name)));
@@ -50,7 +58,7 @@ if (spawnSync('toktx', ['--version'], { stdio: 'ignore' }).error) {
 
 for (const entry of stale) {
   console.log(`Encoding ${entry.name} (${entry.transfer}, ${entry.encode ?? 'etc1s'})…`);
-  const result = spawnSync('toktx', toktxArgs(entry, source(entry.name), output(entry.name)), {
+  const result = spawnSync('toktx', toktxArgs(entry, source(entry), output(entry.name)), {
     stdio: 'inherit',
   });
   if (result.status !== 0) {

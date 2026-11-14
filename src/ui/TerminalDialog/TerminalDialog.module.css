@@ -1,6 +1,6 @@
 .dialog {
-  --x: 50vw;
-  --y: 50vh;
+  --x: 1rem;
+  --y: 1rem;
   --scale: 1;
   --opacity: 1;
 
@@ -19,10 +19,9 @@
   font-size: 0.875rem;
   line-height: 1.55;
   opacity: var(--opacity);
-  /* Sit to the left of the anchor (the body's left limb), never past the left edge. */
-  transform: translate3d(max(1rem, calc(var(--x) - 100% - 1.5rem)), var(--y), 0) translateY(-50%)
-    scale(var(--scale));
-  transform-origin: right center;
+  /* --x/--y are the top-left corner, chosen by the scene to keep Voyager and the body clear. */
+  transform: translate3d(var(--x), var(--y), 0) scale(var(--scale));
+  transform-origin: top left;
   pointer-events: auto;
   will-change: transform, opacity;
 }

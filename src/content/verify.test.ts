@@ -14,6 +14,9 @@ describe('listUnverified', () => {
       'vesta.text.role',
       'pallas.text.leadership',
       'hygiea.text.leadership',
+      'io.text.role',
+      'europa.text.role',
+      'ganymede.text.role',
     ]);
   });
 

@@ -18,5 +18,49 @@
   "2k_mars": {
     "source": "2d187f3e77a98eaa8cea5f4cc722f633c122ef170b9e94ace6b5fb6cbc3f8e01",
     "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "2k_jupiter": {
+    "source": "b0f04d005350252636b0e3396fc592548cbd9e9126b269d32d5c6abd4b0e4f2b",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "2k_saturn": {
+    "source": "54a900ca9bf7ab62e70f862852759abdf342e6d6436a95a2fe9ebdb6bcd3bbac",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "2k_saturn_ring_alpha": {
+    "source": "4b0644b2f3ef259fd0bfaedd9dc52f9e7d9738f65f50363e8c4dd19f650d7334",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --resize 2048x16 --genmipmap --assign_oetf srgb"
+  },
+  "1k_io": {
+    "source": "900290d48988ea10782551af2ad6b5de3a08db899f2089d6e28e6a76a6deba9d",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "1k_europa": {
+    "source": "9fd346a8f205de365d27389cbc45b479f0411b7250101ad99bcf6a81850d6ac3",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "1k_ganymede": {
+    "source": "c83dcbb251b6ec7b441dea63764175c30e78a75321072abc464e7b3b639f2779",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "1k_callisto": {
+    "source": "a2497fb0dcce272792413a2931ce52ad557b37a61779ce809757111ca5d86960",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "1k_titan": {
+    "source": "c74a36d38ea5037fb094a43c54996fd521f28b59e11ec4335d244c3de253310c",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "1k_rhea": {
+    "source": "31fb61c042ca75d08e0bba81dcd3cdb1fb7f0f6a83259cf6e204988b0ead1d27",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "1k_iapetus": {
+    "source": "ba0abb0484b56dc398c303ea891ae281d55d1318fcd1670cfe703a3bacc813a5",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "1k_enceladus": {
+    "source": "23f126c8a34b38943d9c67940c865781eeb7cac0fc9e6ae5fe39f8ebb5c4a47b",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
   }
 }

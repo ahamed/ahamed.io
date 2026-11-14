@@ -1,6 +1,6 @@
 import { useCallback, useId } from 'react';
 import type { Stop } from '../../content/schema';
-import { dialogElements } from './registry';
+import { registerDialog } from './registry';
 import styles from './TerminalDialog.module.css';
 import { useTypewriter } from './useTypewriter';
 
@@ -61,8 +61,7 @@ export function TerminalDialog({ stop, open }: Props) {
 
   const register = useCallback(
     (element: HTMLElement | null) => {
-      if (element) dialogElements.set(stop.id, element);
-      else dialogElements.delete(stop.id);
+      registerDialog(stop.id, element);
     },
     [stop.id],
   );

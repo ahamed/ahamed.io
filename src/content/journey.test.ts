@@ -13,6 +13,31 @@ const allText = STOPS.map((stop) =>
 ).join(' ');
 
 const PROJECTS = ['mars', 'phobos', 'deimos', 'ceres', 'vesta', 'pallas', 'hygiea'] as const;
+const GAS_GIANT_MOONS = [
+  'io',
+  'europa',
+  'ganymede',
+  'callisto',
+  'titan',
+  'rhea',
+  'iapetus',
+  'enceladus',
+] as const;
+const ROUTE = [
+  'earth',
+  'moon',
+  ...PROJECTS,
+  'jupiter',
+  'io',
+  'europa',
+  'ganymede',
+  'callisto',
+  'saturn',
+  'titan',
+  'rhea',
+  'iapetus',
+  'enceladus',
+] as const;
 const HEADCOUNT = /\d+\+?\s*(people|employees|engineers|staff)/i;
 
 const stopById = (id: string) => {
@@ -22,8 +47,8 @@ const stopById = (id: string) => {
 };
 
 describe('journey content', () => {
-  it('lists Earth, the Moon, then the inner system in route order', () => {
-    expect(STOPS.map((s) => s.id)).toEqual(['earth', 'moon', ...PROJECTS]);
+  it('lists Earth, the Moon, the inner system, then the gas giants in route order', () => {
+    expect(STOPS.map((s) => s.id)).toEqual(ROUTE);
   });
 
   it('passes the schema', () => {
@@ -39,7 +64,7 @@ describe('journey content', () => {
   });
 
   it('gives each project card 15-40 words and 2-6 tech chips', () => {
-    for (const id of PROJECTS) {
+    for (const id of [...PROJECTS, ...GAS_GIANT_MOONS]) {
       const stop = stopById(id);
       const words = countWords(stop.text);
       expect(words, id).toBeGreaterThanOrEqual(15);
@@ -61,10 +86,43 @@ describe('journey content', () => {
     ['ceres', 'https://github.com/themeum/growfund'],
     ['vesta', 'https://github.com/themeum/tutor'],
     ['pallas', 'https://github.com/JoomShaper/helix-ultimate'],
+    ['callisto', 'https://github.com/ahamed/druti-ime'],
+    ['titan', 'https://github.com/ahamed/JsPhp'],
+    ['rhea', 'https://github.com/ahamed/treeSortable'],
+    ['iapetus', 'https://github.com/ahamed/jext-cli'],
+    ['enceladus', 'https://github.com/ahamed/vscode-extension-close-to-left'],
   ])('links %s to its public repository', (id, href) => {
     expect(stopById(id).links).toContainEqual(
       expect.objectContaining({ label: 'GitHub', href, verified: true }),
     );
+  });
+
+  it('gives the Jupiter and Saturn hubs a 15-40 word theme card with no chips or links', () => {
+    for (const id of ['jupiter', 'saturn']) {
+      const stop = stopById(id);
+      const words = countWords(stop.text);
+      expect(words, id).toBeGreaterThanOrEqual(15);
+      expect(words, id).toBeLessThanOrEqual(40);
+      expect(stop.tech ?? [], id).toEqual([]);
+      expect(stop.links, id).toEqual([]);
+    }
+  });
+
+  it('keeps the private Ollyo products (Io, Europa, Ganymede) unlinked, with neutral wording', () => {
+    for (const id of ['io', 'europa', 'ganymede']) {
+      const stop = stopById(id);
+      expect(stop.links, id).toEqual([]);
+      expect(stop.text, id).toMatch(/\bI work on\b/);
+      expect(stop.text, id).not.toMatch(/\b(architect|created|built|lead|led)\b/i);
+    }
+  });
+
+  it('describes Druti on Callisto as the Rust engine with native keyboards', () => {
+    const stop = stopById('callisto');
+    expect(stop.text).toMatch(/Rust/);
+    expect(stop.text).toMatch(/macOS/);
+    expect(stop.text).toMatch(/iOS/);
+    expect(stop.tech).toEqual(expect.arrayContaining(['Rust', 'Swift', 'WebAssembly']));
   });
 
   it('introduces the owner on Earth without a headcount', () => {

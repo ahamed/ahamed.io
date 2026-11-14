@@ -108,7 +108,7 @@ interface RouteLike {
 
 /**
  * The belt's span along the route: from halfway between Deimos and Ceres to halfway between
- * Hygiea and the end of the route.
+ * Hygiea and the next body (Jupiter), or the end of the route when Hygiea is the last body.
  */
 export function beltSpan(route: RouteLike): { zStart: number; zEnd: number } {
   const z = (id: string): number => {
@@ -116,8 +116,10 @@ export function beltSpan(route: RouteLike): { zStart: number; zEnd: number } {
     if (!body) throw new Error(`route has no ${id}`);
     return body.position[2];
   };
+  const hygiea = route.bodies.findIndex((b) => b.id === 'hygiea');
+  const next = route.bodies[hygiea + 1];
   return {
     zStart: (z('deimos') + z('ceres')) / 2,
-    zEnd: (z('hygiea') - route.length) / 2,
+    zEnd: (z('hygiea') + (next ? next.position[2] : -route.length)) / 2,
   };
 }

@@ -9,7 +9,32 @@ interface BodyInfo {
   distanceKm: number;
   /** The planet a moon belongs to; moons sit on alternating sides behind it. */
   parent?: BodyId;
+  /** Radius the body occupies for layout (a ringed planet's ring edge); defaults to `radius`. */
+  footprint?: number;
 }
+
+/** Real mean radius of Ganymede (km), the reference for the gas-giant moon sizes. */
+const GANYMEDE_KM = 2634.1;
+/** Render radius of the largest moon; the others scale by real radius from it. */
+const LARGEST_MOON = 2.4;
+/**
+ * Smallest render radius for a gas-giant moon, so each dialog still opens when parked at its
+ * close point (checked for every stop in sizes.test.ts).
+ */
+export const MOON_FLOOR = 1;
+const moonRadius = (km: number) => Math.max(MOON_FLOOR, (LARGEST_MOON * km) / GANYMEDE_KM);
+
+/** Saturn's outer A-ring edge, in Saturn radii (136,775 km / 60,268 km). */
+export const RING_OUTER = 2.27;
+/** Saturn's inner C-ring edge, in Saturn radii (74,658 km / 60,268 km). */
+export const RING_INNER = 1.24;
+const SATURN_RADIUS = 13;
+
+/**
+ * Smallest gap (world units) between any body’s footprint and the flight path, so neither
+ * Voyager nor the chase camera (2.2 up, 7 back) ever passes through a body or ring.
+ */
+export const PATH_CLEARANCE = 1;
 
 /**
  * Radii are exaggerated, and the small rocks most of all: the chase camera sits about 9 units
@@ -26,6 +51,20 @@ export const BODY_INFO: Record<BodyId, BodyInfo> = {
   vesta: { radius: 1.25, distanceKm: 61_000_000 }, // semi-major axis difference
   pallas: { radius: 1.2, distanceKm: 61_000_000 },
   hygiea: { radius: 1.05, distanceKm: 55_000_000 },
+  jupiter: { radius: 16, distanceKm: 310_000_000 }, // ≈2.1 AU beyond Hygiea
+  io: { radius: moonRadius(1821.6), distanceKm: 421_700, parent: 'jupiter' }, // orbital radii
+  europa: { radius: moonRadius(1560.8), distanceKm: 671_000, parent: 'jupiter' },
+  ganymede: { radius: moonRadius(2634.1), distanceKm: 1_070_400, parent: 'jupiter' },
+  callisto: { radius: moonRadius(2410.3), distanceKm: 1_882_700, parent: 'jupiter' },
+  saturn: {
+    radius: SATURN_RADIUS,
+    distanceKm: 650_000_000, // ≈4.3 AU beyond Jupiter
+    footprint: SATURN_RADIUS * RING_OUTER,
+  },
+  titan: { radius: moonRadius(2574.7), distanceKm: 1_221_870, parent: 'saturn' },
+  rhea: { radius: moonRadius(763.8), distanceKm: 527_108, parent: 'saturn' },
+  iapetus: { radius: moonRadius(734.5), distanceKm: 3_560_820, parent: 'saturn' },
+  enceladus: { radius: moonRadius(252.1), distanceKm: 237_948, parent: 'saturn' },
 };
 
 /** Progress kept after the last stop so it can be passed. */
@@ -42,6 +81,8 @@ export interface RouteBody {
   id: string;
   body: BodyId;
   radius: number;
+  /** Layout radius: the ring edge for a ringed planet, otherwise `radius`. */
+  footprint: number;
   position: Vec3;
 }
 
@@ -74,6 +115,7 @@ export function buildRoute(stops: readonly Stop[]): Route {
   const moonsSeen = new Map<BodyId, number>();
   const bodies = stops.map((stop, i): RouteBody => {
     const { radius, parent } = BODY_INFO[stop.body];
+    const footprint = BODY_INFO[stop.body].footprint ?? radius;
     const cp = closePoints[i] ?? 0;
     // Planets sit on +X; a planet's moons alternate, starting on the opposite side.
     let side = 1;
@@ -82,12 +124,14 @@ export function buildRoute(stops: readonly Stop[]): Route {
       moonsSeen.set(parent, n + 1);
       side = n % 2 === 0 ? -1 : 1;
     }
-    // Beside and slightly ahead of the close point so it fills the chase view there.
+    // Beside and slightly ahead of the close point so it fills the chase view there. The
+    // footprint (rings) keeps the gap to the path; without rings this is 2.3 radii.
     return {
       id: stop.id,
       body: stop.body,
       radius,
-      position: [side * radius * 2.3, 0, -(cp * length) - radius * 2],
+      footprint,
+      position: [side * (footprint + 1.3 * radius), 0, -(cp * length) - radius * 2],
     };
   });
 

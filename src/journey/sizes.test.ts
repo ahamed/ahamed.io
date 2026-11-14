@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { STOPS } from '../content/journey';
 import { chasePoseInto, type ChasePose } from './camera';
-import { buildRoute } from './route';
+import { buildRoute, type Vec3 } from './route';
 import { stopSizesInto } from './sizes';
-import { chooseOpenStop, dialogScale, OPEN_SIZE } from './visibility';
+import { apparentSize, chooseOpenStop, dialogScale, OPEN_SIZE } from './visibility';
 
 const route = buildRoute(STOPS);
 const fov = (50 * Math.PI) / 180;
@@ -15,7 +15,7 @@ function fly(from: number, to: number, start: number | null) {
   let open = start;
   const opened: (string | null)[] = [];
   const scales: number[] = [];
-  const steps = 400;
+  const steps = 4000; // fine enough to see the short closed gap between neighbouring moons
   for (let i = 0; i <= steps; i++) {
     const p = from + ((to - from) * i) / steps;
     chasePoseInto(pose, route, p);
@@ -28,6 +28,43 @@ function fly(from: number, to: number, start: number | null) {
 }
 
 const collapse = (xs: (string | null)[]) => xs.filter((x, i) => i === 0 || x !== xs[i - 1]);
+
+describe('stopSizesInto', () => {
+  const one = {
+    length: 100,
+    closePoints: [0],
+    bodies: [
+      {
+        id: 'x',
+        body: 'jupiter' as const,
+        radius: 16,
+        footprint: 16,
+        position: [40, 0, -100] as Vec3,
+      },
+    ],
+  };
+
+  it('gives a body ahead of the camera its apparent size', () => {
+    const out = [0];
+    stopSizesInto(out, one, [0, 0, 0], fov);
+    expect(out[0]).toBeGreaterThan(0);
+  });
+
+  it('shrinks a body to zero as it slides out of view past the camera', () => {
+    const at = (z: number) => {
+      const out = [0];
+      stopSizesInto(out, one, [0, 0, z], fov);
+      return out[0] ?? NaN;
+    };
+    // Well ahead: the plain apparent size. Behind the camera: zero. Once past: shrinking.
+    expect(at(-40)).toBeCloseTo(apparentSize(16, Math.hypot(40, 60), fov), 12);
+    expect(at(-140)).toBe(0);
+    const passing = [-100, -110, -120, -130].map(at);
+    for (let i = 1; i < passing.length; i++) {
+      expect(passing[i]).toBeLessThanOrEqual(passing[i - 1] ?? 0);
+    }
+  });
+});
 
 describe('dialog sequence along the route', () => {
   // PageDown and the idle snap park the camera exactly on a close point, so each stop must

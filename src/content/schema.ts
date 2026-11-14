@@ -30,6 +30,16 @@ export const bodySchema = z.enum([
   'vesta',
   'pallas',
   'hygiea',
+  'jupiter',
+  'io',
+  'europa',
+  'ganymede',
+  'callisto',
+  'saturn',
+  'titan',
+  'rhea',
+  'iapetus',
+  'enceladus',
 ]);
 
 export const stopSchema = z.object({

@@ -8,6 +8,8 @@ import { createHash } from 'node:crypto';
  *                              `public/textures/<name>.ktx2`.
  * @property {'srgb' | 'linear'} transfer  Colour maps are sRGB; masks and data are linear.
  * @property {'etc1s' | 'uastc'} [encode] Basis codec; ETC1S unless the result shows blocks.
+ * @property {'jpg' | 'png'} [ext] Source file extension; `jpg` unless the source has alpha.
+ * @property {string} [resize] Output size `WxH`, when the source should be resampled.
  */
 
 /**
@@ -23,7 +25,26 @@ export const TEXTURES = [
   { name: '2k_moon', transfer: 'srgb' },
   { name: '2k_stars_milky_way', transfer: 'srgb' },
   { name: '2k_mars', transfer: 'srgb' },
+  { name: '2k_jupiter', transfer: 'srgb' },
+  { name: '2k_saturn', transfer: 'srgb' },
+  // Colour by radius in RGB, opacity in A. Only its length matters, so it is squeezed to a strip.
+  { name: '2k_saturn_ring_alpha', transfer: 'srgb', ext: 'png', resize: '2048x16' },
+  // USGS Astrogeology global mosaics, downsampled to 1024×512 (see CREDITS.md).
+  { name: '1k_io', transfer: 'srgb' },
+  { name: '1k_europa', transfer: 'srgb' },
+  { name: '1k_ganymede', transfer: 'srgb' },
+  { name: '1k_callisto', transfer: 'srgb' },
+  { name: '1k_titan', transfer: 'srgb' },
+  { name: '1k_rhea', transfer: 'srgb' },
+  { name: '1k_iapetus', transfer: 'srgb' },
+  { name: '1k_enceladus', transfer: 'srgb' },
 ];
+
+/**
+ * Source file name in assets/textures/.
+ * @param {TextureEntry} entry
+ */
+export const sourceFile = (entry) => `${entry.name}.${entry.ext ?? 'jpg'}`;
 
 /**
  * toktx arguments for one texture: KTX2 with generated mipmaps, Basis-compressed.
@@ -37,7 +58,17 @@ export function toktxArgs(entry, source, output) {
     entry.encode === 'uastc'
       ? ['--encode', 'uastc', '--uastc_quality', '2', '--zcmp', '18']
       : ['--encode', 'etc1s', '--clevel', '4', '--qlevel', '192'];
-  return ['--t2', ...codec, '--genmipmap', '--assign_oetf', entry.transfer, output, source];
+  const resize = entry.resize ? ['--resize', entry.resize] : [];
+  return [
+    '--t2',
+    ...codec,
+    ...resize,
+    '--genmipmap',
+    '--assign_oetf',
+    entry.transfer,
+    output,
+    source,
+  ];
 }
 
 /**
