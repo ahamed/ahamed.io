@@ -76,6 +76,9 @@ export const BODY_INFO: Record<BodyId, BodyInfo> = {
   charon: { radius: 1.6, distanceKm: 19_591, parent: 'pluto' }, // orbital radius
   arrokoth: { radius: 1, distanceKm: 750_000_000 }, // ≈5 AU beyond Pluto
   eris: { radius: 2.4, distanceKm: 3_600_000_000 }, // ≈24 AU further out
+  // Voyager 1 crossed at ≈121 AU. Nothing is drawn here: the radius is an invisible anchor
+  // that opens the dialog like any body (the shells are drawn by Heliopause).
+  heliopause: { radius: 1.5, distanceKm: 3_700_000_000 },
 };
 
 /** Progress kept after the last stop so it can be passed. */

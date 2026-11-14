@@ -15,12 +15,12 @@ afterEach(() => {
 });
 
 describe('SpaceEnvironment', () => {
-  it('groups the sky, stars and Sun under one ref-able group', async () => {
+  it('groups the sky, stars, Sun and meteor streak under one ref-able group', async () => {
     stubReducedMotion(false);
     const ref = createRef<Group>();
     const renderer = await ReactThreeTestRenderer.create(<SpaceEnvironment ref={ref} />);
     expect(ref.current).toBeInstanceOf(Group);
-    for (const name of ['sky', 'stars', 'sun']) {
+    for (const name of ['sky', 'stars', 'sun', 'meteor']) {
       expect(ref.current?.getObjectByName(name), name).toBeDefined();
     }
     await renderer.unmount();

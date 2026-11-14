@@ -30,6 +30,7 @@ const ROUTE = [
   'charon',
   'arrokoth',
   'eris',
+  'heliopause',
 ];
 /** Stops whose small body sits near the screen centre, where the dialog used to cover Voyager. */
 const SMALL_BODIES = [
@@ -51,6 +52,7 @@ const SMALL_BODIES = [
   'charon',
   'arrokoth',
   'eris',
+  'heliopause',
 ];
 
 /** Asserts the open dialog of `stop` does not cover Voyager's on-screen box. */
@@ -120,8 +122,8 @@ test.describe('voyage', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
-  test('PageDown visits all 26 stops in order, one dialog at a time', async ({ page }) => {
-    // Twenty-five flights under headless software WebGL take far longer than the default budget.
+  test('PageDown visits all 27 stops in order, one dialog at a time', async ({ page }) => {
+    // Twenty-six flights under headless software WebGL take far longer than the default budget.
     test.setTimeout(360_000);
     for (const [i, stop] of ROUTE.entries()) {
       if (i > 0) await page.keyboard.press('PageDown');
@@ -145,6 +147,17 @@ test.describe('voyage', () => {
     await expect(phobos).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
     const chips = phobos.getByRole('list', { name: 'Tech' }).getByRole('listitem');
     await expect(chips).toHaveText(['PHP', 'WordPress', 'REST API', 'Stripe', 'PHPUnit']);
+  });
+
+  test('the deep sky is hidden at Eris and revealed at the heliopause', async ({ page }) => {
+    test.setTimeout(360_000);
+    const canvas = page.locator('canvas');
+    for (const stop of ROUTE.slice(1)) {
+      await page.keyboard.press('PageDown');
+      await expect(dialog(page, stop)).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
+      if (stop === 'eris') await expect(canvas).toHaveAttribute('data-deep-sky', 'hidden');
+    }
+    await expect(canvas).toHaveAttribute('data-deep-sky', 'shown', OPEN_TIMEOUT);
   });
 
   test('End passes everything and Home returns to Earth', async ({ page }) => {
@@ -176,7 +189,9 @@ test.describe('voyage on a phone', () => {
 });
 
 test.describe('voyage assets', () => {
-  test('only the body and sky textures load: no environment maps, no errors', async ({ page }) => {
+  test('only the body and sky textures load, even at the end: no environment maps, no errors', async ({
+    page,
+  }) => {
     const requests: string[] = [];
     const errors: string[] = [];
     page.on('request', (request) => requests.push(new URL(request.url()).pathname));
@@ -192,6 +207,10 @@ test.describe('voyage assets', () => {
     await page.goto('/');
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
     await transcoder;
+    await page.waitForLoadState('networkidle');
+    // Flying to the end (heliopause, deep sky, meteors) fetches nothing more.
+    await page.keyboard.press('End');
+    await expect(page.locator('canvas')).toHaveAttribute('data-deep-sky', 'shown', OPEN_TIMEOUT);
     await page.waitForLoadState('networkidle');
 
     expect(requests.filter((path) => /\.(hdr|exr)$/i.test(path))).toEqual([]);

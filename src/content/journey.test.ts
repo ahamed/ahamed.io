@@ -44,6 +44,7 @@ const ROUTE = [
   'charon',
   'arrokoth',
   'eris',
+  'heliopause',
 ] as const;
 const SMALL_CARDS = ['support-comet', 'recruiter-comet', 'upcoming-comet', 'arrokoth', 'eris'];
 const HEADCOUNT = /\d+\+?\s*(people|employees|engineers|staff)/i;
@@ -159,6 +160,20 @@ describe('journey content', () => {
   it('names no institution and no security teaching on Eris', () => {
     const { text, title } = stopById('eris');
     expect(`${title} ${text}`).not.toMatch(/universit|institut|college|school|academy|security/i);
+  });
+
+  it('gives the heliopause a leadership card that names the keynote, with no link or headcount', () => {
+    const stop = stopById('heliopause');
+    const words = countWords(stop.text);
+    expect(words).toBeGreaterThanOrEqual(20);
+    expect(words).toBeLessThanOrEqual(60);
+    expect(stop.tech?.length ?? 0).toBeGreaterThanOrEqual(4);
+    expect(stop.tech?.length ?? 0).toBeLessThanOrEqual(6);
+    expect(stop.links).toEqual([]);
+    expect(stop.text).toContain('AI-Native Engineering');
+    expect(stop.text).toContain('Ollyocon');
+    expect(stop.text).not.toMatch(HEADCOUNT);
+    expect(stop.text).not.toMatch(/\b\d{2,}\s*\+/);
   });
 
   it('introduces the owner on Earth without a headcount', () => {

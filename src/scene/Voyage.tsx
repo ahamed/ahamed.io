@@ -7,6 +7,8 @@ import { asteroidBelt, KUIPER_COLOR, kuiperBelt } from './bodies/beltPresets';
 import { Bodies } from './bodies/Bodies';
 import { CameraRig } from './CameraRig';
 import { Lights } from './Lights';
+import { DeepSky } from './space/DeepSky';
+import { Heliopause } from './space/Heliopause';
 import { PostFX } from './space/PostFX';
 import { SpaceEnvironment } from './space/SpaceEnvironment';
 import { SpeedDust } from './space/SpeedDust';
@@ -40,6 +42,8 @@ export default function Voyage() {
       <Bodies route={ROUTE} />
       <AsteroidBelt options={BELT} />
       <AsteroidBelt options={KUIPER} color={KUIPER_COLOR} name="kuiper-belt" />
+      <Heliopause route={ROUTE} />
+      <DeepSky route={ROUTE} />
       <SpeedDust />
       <CameraRig route={ROUTE} store={journeyStore} voyager={voyager} sky={sky} />
       <PostFX />

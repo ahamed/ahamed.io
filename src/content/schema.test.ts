@@ -66,6 +66,7 @@ describe('validateStops', () => {
       'charon',
       'arrokoth',
       'eris',
+      'heliopause',
     ] as const;
     const stops = bodies.map((body) => ({ ...validStop, id: body, body }));
     expect(validateStops(stops).success).toBe(true);

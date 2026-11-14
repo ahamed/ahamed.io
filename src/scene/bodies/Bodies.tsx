@@ -29,7 +29,8 @@ const texturedMoon =
   (preset: MoonPresetId): BodyComponent =>
   ({ radius }) => <TexturedMoon preset={preset} radius={radius} />;
 
-const BODY_COMPONENTS: Record<BodyId, BodyComponent> = {
+/** `null`: a stop with no body of its own (the heliopause's invisible dialog anchor). */
+const BODY_COMPONENTS: Record<BodyId, BodyComponent | null> = {
   earth: Earth,
   moon: Moon,
   mars: Mars,
@@ -56,6 +57,7 @@ const BODY_COMPONENTS: Record<BodyId, BodyComponent> = {
   charon: texturedMoon('charon'),
   arrokoth: Arrokoth,
   eris: rock('eris'),
+  heliopause: null,
 };
 
 /** Untextured stand-in while a body's maps load. */
@@ -75,9 +77,11 @@ export function Bodies({ route }: { route: Route }) {
         const Body = BODY_COMPONENTS[body];
         return (
           <group key={id} name={`body-${id}`} position={position}>
-            <Suspense fallback={<Placeholder radius={radius} />}>
-              <Body radius={radius} />
-            </Suspense>
+            {Body && (
+              <Suspense fallback={<Placeholder radius={radius} />}>
+                <Body radius={radius} />
+              </Suspense>
+            )}
           </group>
         );
       })}

@@ -47,6 +47,7 @@ export const bodySchema = z.enum([
   'charon',
   'arrokoth',
   'eris',
+  'heliopause',
 ]);
 
 export const stopSchema = z.object({

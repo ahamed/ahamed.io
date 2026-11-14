@@ -19,7 +19,7 @@ vi.mock('../ktx2', async () => {
 });
 
 describe('Bodies', () => {
-  it('places all 26 bodies along the travel direction (-Z) in route order', async () => {
+  it('places all 27 stops along the travel direction (-Z) in route order', async () => {
     const renderer = await ReactThreeTestRenderer.create(<Bodies route={buildRoute(STOPS)} />);
     const zs = STOPS.map(
       (stop) =>
@@ -61,6 +61,14 @@ describe('Bodies', () => {
     expect(scene.getObjectByName('moon-charon')).toBeDefined();
     expect(scene.getObjectByName('arrokoth')).toBeDefined();
     expect(scene.getObjectByName('rock-eris')).toBeDefined();
+    await renderer.unmount();
+  });
+
+  it('draws nothing at the heliopause anchor (the shells are drawn by Heliopause)', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Bodies route={buildRoute(STOPS)} />);
+    const anchor = renderer.scene.instance.getObjectByName('body-heliopause');
+    expect(anchor).toBeDefined();
+    expect(anchor?.children).toHaveLength(0);
     await renderer.unmount();
   });
 });

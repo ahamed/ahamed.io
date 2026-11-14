@@ -152,6 +152,14 @@ describe('buildRoute', () => {
     expect(x('charon')).toBeLessThan(0);
   });
 
+  it('ends with the heliopause after Eris, a log-compressed ≈25 AU gap away', () => {
+    expect(route.bodies.at(-1)?.id).toBe('heliopause');
+    expect(route.bodies.at(-2)?.id).toBe('eris');
+    expect(BODY_INFO.heliopause.distanceKm).toBeGreaterThan(3.5e9);
+    expect(BODY_INFO.heliopause.distanceKm).toBeLessThan(4e9);
+    expect(route.closePoints.at(-1)).toBeCloseTo(1 - END_SLACK);
+  });
+
   it('writes positions along the path into a provided vector', () => {
     const out: Vec3 = [0, 0, 0];
     pointAt(route, 0.5, out);

@@ -116,9 +116,14 @@ describe('spanAround', () => {
     expect(spanAround(route, 'ceres', 'hygiea')).toEqual(beltSpan(route));
   });
 
-  it('spans the Kuiper belt from before Pluto to past Eris, the last body', () => {
+  it('spans the Kuiper belt from before Pluto to halfway from Eris to the heliopause', () => {
     const { zStart, zEnd } = spanAround(route, 'pluto', 'eris');
     expect(zStart).toBeCloseTo((z('upcoming-comet') + z('pluto')) / 2, 9);
-    expect(zEnd).toBeCloseTo((z('eris') - route.length) / 2, 9);
+    expect(zEnd).toBeCloseTo((z('eris') + z('heliopause')) / 2, 9);
+  });
+
+  it('ends a span at the route end when its last body is the last stop', () => {
+    const { zEnd } = spanAround(route, 'eris', 'heliopause');
+    expect(zEnd).toBeCloseTo((z('heliopause') - route.length) / 2, 9);
   });
 });

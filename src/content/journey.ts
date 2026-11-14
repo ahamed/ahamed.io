@@ -324,4 +324,19 @@ export const STOPS: readonly Stop[] = [
     links: [],
     tech: ['HTML', 'CSS', 'Tailwind CSS', 'JavaScript', 'React', 'React Router'],
   },
+  {
+    id: 'heliopause',
+    body: 'heliopause',
+    title: 'Leadership',
+    text: 'I lead by making ownership clear, settling the architecture before the code, and treating engineering as one system, from design and testing to infrastructure and delivery. At Ollyo I am building the processes and culture that keep teams accountable. At Ollyocon I gave the keynote “AI-Native Engineering”, on how AI is changing the way we build.',
+    timeline: [],
+    links: [],
+    tech: [
+      'Engineering leadership',
+      'Software architecture',
+      'Process design',
+      'AI-native engineering',
+      'Mentoring',
+    ],
+  },
 ];
