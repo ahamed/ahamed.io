@@ -40,7 +40,7 @@ describe('validateStops', () => {
     expect(result.success).toBe(false);
   });
 
-  it('accepts every inner-system and gas-giant body', () => {
+  it('accepts every inner-system, gas-giant and outer-system body', () => {
     const bodies = [
       'mars',
       'phobos',
@@ -59,6 +59,13 @@ describe('validateStops', () => {
       'rhea',
       'iapetus',
       'enceladus',
+      'support-comet',
+      'recruiter-comet',
+      'upcoming-comet',
+      'pluto',
+      'charon',
+      'arrokoth',
+      'eris',
     ] as const;
     const stops = bodies.map((body) => ({ ...validStop, id: body, body }));
     expect(validateStops(stops).success).toBe(true);

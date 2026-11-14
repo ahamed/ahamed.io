@@ -12,6 +12,10 @@ const COLORS: Partial<Record<RockPresetId, string>> = {
   vesta: '#a39a8e',
   pallas: '#7f7a74',
   hygiea: '#6b6762',
+  'comet-nucleus': '#5d5852',
+  'arrokoth-wenu': '#a06a4f',
+  'arrokoth-weeyo': '#a06a4f',
+  eris: '#f2f2f0',
 };
 
 const HERO_DETAIL = 32;

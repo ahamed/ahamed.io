@@ -19,7 +19,7 @@ vi.mock('../ktx2', async () => {
 });
 
 describe('Bodies', () => {
-  it('places all 19 bodies along the travel direction (-Z) in route order', async () => {
+  it('places all 26 bodies along the travel direction (-Z) in route order', async () => {
     const renderer = await ReactThreeTestRenderer.create(<Bodies route={buildRoute(STOPS)} />);
     const zs = STOPS.map(
       (stop) =>
@@ -46,6 +46,21 @@ describe('Bodies', () => {
     ]) {
       expect(scene.getObjectByName(`moon-${moon}`), moon).toBeDefined();
     }
+    await renderer.unmount();
+  });
+
+  it('draws the comets, Pluto, Charon, Arrokoth and Eris with their own components', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Bodies route={buildRoute(STOPS)} />);
+    const scene = renderer.scene.instance;
+    const comets: string[] = [];
+    scene.traverse((o) => {
+      if (o.name === 'comet') comets.push(o.uuid);
+    });
+    expect(comets).toHaveLength(3);
+    expect(scene.getObjectByName('moon-pluto')).toBeDefined();
+    expect(scene.getObjectByName('moon-charon')).toBeDefined();
+    expect(scene.getObjectByName('arrokoth')).toBeDefined();
+    expect(scene.getObjectByName('rock-eris')).toBeDefined();
     await renderer.unmount();
   });
 });

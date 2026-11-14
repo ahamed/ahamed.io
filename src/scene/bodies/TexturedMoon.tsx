@@ -7,7 +7,7 @@ import { useDrawDistance } from './useDrawDistance';
 
 /** A gas-giant moon: a 1K KTX2 global mosaic on a sphere, with Titan's haze rim. */
 export function TexturedMoon({ preset, radius }: { preset: MoonPresetId; radius: number }) {
-  const { tint, roughness, haze } = MOON_PRESETS[preset];
+  const { tint, roughness, haze, yaw = 0, pitch = 0 } = MOON_PRESETS[preset];
   const [map] = useKtx2([`1k_${preset}`]);
   const root = useRef<Group>(null);
   useDrawDistance(root, radius);
@@ -21,10 +21,12 @@ export function TexturedMoon({ preset, radius }: { preset: MoonPresetId; radius:
 
   return (
     <group name={`moon-${preset}-root`} ref={root}>
-      <mesh name={`moon-${preset}`}>
-        <sphereGeometry args={[radius, 96, 48]} />
-        <meshStandardMaterial map={map} color={tint} roughness={roughness} metalness={0} />
-      </mesh>
+      <group rotation-x={pitch}>
+        <mesh name={`moon-${preset}`} rotation-y={yaw}>
+          <sphereGeometry args={[radius, 96, 48]} />
+          <meshStandardMaterial map={map} color={tint} roughness={roughness} metalness={0} />
+        </mesh>
+      </group>
       {hazeUniforms && (
         <mesh name={`moon-${preset}-haze`} scale={1.04}>
           <sphereGeometry args={[radius, 64, 32]} />

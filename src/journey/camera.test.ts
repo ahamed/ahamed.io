@@ -27,7 +27,8 @@ describe('chasePoseInto', () => {
       a.position[1] - b.position[1],
       a.position[2] - b.position[2],
     );
-    expect(d).toBeLessThan(1);
+    // No jump: a 0.0001 progress step moves the camera about that share of the route length.
+    expect(d).toBeLessThanOrEqual(0.0001 * route.length * 1.001);
   });
 });
 

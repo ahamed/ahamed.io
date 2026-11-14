@@ -24,6 +24,9 @@ const LARGEST_MOON = 2.4;
 export const MOON_FLOOR = 1;
 const moonRadius = (km: number) => Math.max(MOON_FLOOR, (LARGEST_MOON * km) / GANYMEDE_KM);
 
+/** A quarter of the Saturn→Pluto cruise (km): the gap before each comet and before Pluto. */
+const CRUISE_LEG_KM = 1_100_000_000;
+
 /** Saturn's outer A-ring edge, in Saturn radii (136,775 km / 60,268 km). */
 export const RING_OUTER = 2.27;
 /** Saturn's inner C-ring edge, in Saturn radii (74,658 km / 60,268 km). */
@@ -65,6 +68,14 @@ export const BODY_INFO: Record<BodyId, BodyInfo> = {
   rhea: { radius: moonRadius(763.8), distanceKm: 527_108, parent: 'saturn' },
   iapetus: { radius: moonRadius(734.5), distanceKm: 3_560_820, parent: 'saturn' },
   enceladus: { radius: moonRadius(252.1), distanceKm: 237_948, parent: 'saturn' },
+  // The three comets and Pluto split the ≈4.4×10⁹ km Saturn→Pluto cruise into four equal legs.
+  'support-comet': { radius: 1, distanceKm: CRUISE_LEG_KM },
+  'recruiter-comet': { radius: 1, distanceKm: CRUISE_LEG_KM },
+  'upcoming-comet': { radius: 1, distanceKm: CRUISE_LEG_KM },
+  pluto: { radius: 2.6, distanceKm: CRUISE_LEG_KM },
+  charon: { radius: 1.6, distanceKm: 19_591, parent: 'pluto' }, // orbital radius
+  arrokoth: { radius: 1, distanceKm: 750_000_000 }, // ≈5 AU beyond Pluto
+  eris: { radius: 2.4, distanceKm: 3_600_000_000 }, // ≈24 AU further out
 };
 
 /** Progress kept after the last stop so it can be passed. */

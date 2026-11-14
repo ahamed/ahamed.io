@@ -107,19 +107,27 @@ interface RouteLike {
 }
 
 /**
- * The belt's span along the route: from halfway between Deimos and Ceres to halfway between
- * Hygiea and the next body (Jupiter), or the end of the route when Hygiea is the last body.
+ * A belt's span along the route around the bodies `firstId` .. `lastId`: from halfway between
+ * the body before `firstId` and `firstId`, to halfway between `lastId` and the next body (or
+ * the end of the route when `lastId` is the last body).
  */
-export function beltSpan(route: RouteLike): { zStart: number; zEnd: number } {
-  const z = (id: string): number => {
-    const body = route.bodies.find((b) => b.id === id);
-    if (!body) throw new Error(`route has no ${id}`);
-    return body.position[2];
+export function spanAround(
+  route: RouteLike,
+  firstId: string,
+  lastId: string,
+): { zStart: number; zEnd: number } {
+  const index = (id: string): number => {
+    const i = route.bodies.findIndex((b) => b.id === id);
+    if (i < 0) throw new Error(`route has no ${id}`);
+    return i;
   };
-  const hygiea = route.bodies.findIndex((b) => b.id === 'hygiea');
-  const next = route.bodies[hygiea + 1];
-  return {
-    zStart: (z('deimos') + z('ceres')) / 2,
-    zEnd: (z('hygiea') + (next ? next.position[2] : -route.length)) / 2,
-  };
+  const z = (i: number) => route.bodies[i]?.position[2] ?? 0;
+  const first = index(firstId);
+  const last = index(lastId);
+  const before = first > 0 ? z(first - 1) : 0;
+  const after = last + 1 < route.bodies.length ? z(last + 1) : -route.length;
+  return { zStart: (before + z(first)) / 2, zEnd: (z(last) + after) / 2 };
 }
+
+/** The asteroid belt's span: from between Deimos and Ceres to between Hygiea and Jupiter. */
+export const beltSpan = (route: RouteLike) => spanAround(route, 'ceres', 'hygiea');

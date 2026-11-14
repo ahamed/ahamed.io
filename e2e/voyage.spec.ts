@@ -23,6 +23,13 @@ const ROUTE = [
   'rhea',
   'iapetus',
   'enceladus',
+  'support-comet',
+  'recruiter-comet',
+  'upcoming-comet',
+  'pluto',
+  'charon',
+  'arrokoth',
+  'eris',
 ];
 /** Stops whose small body sits near the screen centre, where the dialog used to cover Voyager. */
 const SMALL_BODIES = [
@@ -37,6 +44,13 @@ const SMALL_BODIES = [
   'rhea',
   'iapetus',
   'enceladus',
+  'support-comet',
+  'recruiter-comet',
+  'upcoming-comet',
+  'pluto',
+  'charon',
+  'arrokoth',
+  'eris',
 ];
 
 /** Asserts the open dialog of `stop` does not cover Voyager's on-screen box. */
@@ -106,9 +120,9 @@ test.describe('voyage', () => {
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
-  test('PageDown visits all 19 stops in order, one dialog at a time', async ({ page }) => {
-    // Eighteen flights under headless software WebGL take far longer than the default budget.
-    test.setTimeout(240_000);
+  test('PageDown visits all 26 stops in order, one dialog at a time', async ({ page }) => {
+    // Twenty-five flights under headless software WebGL take far longer than the default budget.
+    test.setTimeout(360_000);
     for (const [i, stop] of ROUTE.entries()) {
       if (i > 0) await page.keyboard.press('PageDown');
       await expect(dialog(page, stop)).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
@@ -117,7 +131,7 @@ test.describe('voyage', () => {
   });
 
   test('at the small-body stops the dialog leaves Voyager uncovered', async ({ page }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(360_000);
     for (const stop of ROUTE.slice(1)) {
       await page.keyboard.press('PageDown');
       await expect(dialog(page, stop)).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
@@ -184,11 +198,13 @@ test.describe('voyage assets', () => {
     const images = requests.filter((path) => /\.(jpe?g|png|webp|avif|ktx2)$/i.test(path));
     expect(images.sort()).toEqual([
       '/textures/1k_callisto.ktx2',
+      '/textures/1k_charon.ktx2',
       '/textures/1k_enceladus.ktx2',
       '/textures/1k_europa.ktx2',
       '/textures/1k_ganymede.ktx2',
       '/textures/1k_iapetus.ktx2',
       '/textures/1k_io.ktx2',
+      '/textures/1k_pluto.ktx2',
       '/textures/1k_rhea.ktx2',
       '/textures/1k_titan.ktx2',
       '/textures/2k_earth_clouds.ktx2',

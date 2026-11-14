@@ -40,6 +40,13 @@ export const bodySchema = z.enum([
   'rhea',
   'iapetus',
   'enceladus',
+  'support-comet',
+  'recruiter-comet',
+  'upcoming-comet',
+  'pluto',
+  'charon',
+  'arrokoth',
+  'eris',
 ]);
 
 export const stopSchema = z.object({

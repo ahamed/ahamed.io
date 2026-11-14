@@ -89,6 +89,45 @@ export const ROCK_PRESETS = {
     craters: { count: 20, min: 0.05, max: 0.16, depth: 0.015 },
     albedo: 0.45,
   },
+  // Arrokoth's two lobes: a larger, flattened Wenu and a smaller, rounder Weeyo.
+  'arrokoth-wenu': {
+    seed: 307,
+    amplitude: 0.06,
+    frequency: 1.5,
+    octaves: 3,
+    squash: [1, 0.55, 0.9],
+    craters: { count: 4, min: 0.1, max: 0.2, depth: 0.02 },
+    albedo: 0.85,
+  },
+  'arrokoth-weeyo': {
+    seed: 311,
+    amplitude: 0.05,
+    frequency: 1.5,
+    octaves: 3,
+    squash: [1, 0.65, 0.85],
+    craters: { count: 3, min: 0.1, max: 0.25, depth: 0.03 },
+    albedo: 0.85,
+  },
+  // Eris: nearly round and one of the brightest bodies in the solar system.
+  eris: {
+    seed: 331,
+    amplitude: 0.01,
+    frequency: 2,
+    octaves: 2,
+    squash: [1, 0.98, 1],
+    craters: { count: 6, min: 0.05, max: 0.12, depth: 0.006 },
+    albedo: 1.3,
+  },
+  // A comet's dark, lumpy nucleus (dust-crusted ice).
+  'comet-nucleus': {
+    seed: 211,
+    amplitude: 0.26,
+    frequency: 1.3,
+    octaves: 4,
+    squash: [1, 0.75, 0.7],
+    craters: { count: 6, min: 0.12, max: 0.3, depth: 0.04 },
+    albedo: 0.5,
+  },
   'belt-a': {
     seed: 101,
     amplitude: 0.22,

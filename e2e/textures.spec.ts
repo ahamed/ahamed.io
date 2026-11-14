@@ -15,15 +15,31 @@ const SOLAR_SYSTEM_SCOPE = [
   '2k_saturn',
   '2k_saturn_ring_alpha',
 ];
-const USGS = ['io', 'europa', 'ganymede', 'callisto', 'titan', 'rhea', 'iapetus', 'enceladus'].map(
-  (moon) => `1k_${moon}`,
-);
+const USGS = [
+  'io',
+  'europa',
+  'ganymede',
+  'callisto',
+  'titan',
+  'rhea',
+  'iapetus',
+  'enceladus',
+  'pluto',
+  'charon',
+].map((moon) => `1k_${moon}`);
 const KTX2 = [...SOLAR_SYSTEM_SCOPE, ...USGS];
 
 test.describe('shipped textures', () => {
   test('every planet and sky texture ships as KTX2, and no source JPG ships', () => {
     for (const name of KTX2) expect(existsSync(join(TEXTURES, `${name}.ktx2`)), name).toBe(true);
     expect(readdirSync(TEXTURES).filter((file) => /\.(jpe?g|png)$/i.test(file))).toEqual([]);
+  });
+
+  test('every texture is stored bottom row first (KTXorientation "ru"), so maps are not upside down', () => {
+    for (const name of KTX2) {
+      const bytes = readFileSync(join(TEXTURES, `${name}.ktx2`));
+      expect(bytes.includes(Buffer.from('KTXorientation\0ru')), name).toBe(true);
+    }
   });
 
   test('each texture is credited with its source and licence', () => {

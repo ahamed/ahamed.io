@@ -38,6 +38,8 @@ export const TEXTURES = [
   { name: '1k_rhea', transfer: 'srgb' },
   { name: '1k_iapetus', transfer: 'srgb' },
   { name: '1k_enceladus', transfer: 'srgb' },
+  { name: '1k_pluto', transfer: 'srgb' },
+  { name: '1k_charon', transfer: 'srgb' },
 ];
 
 /**
@@ -63,6 +65,9 @@ export function toktxArgs(entry, source, output) {
     '--t2',
     ...codec,
     ...resize,
+    // three.js never flips compressed textures and samples row 0 at v = 0 (the south pole of a
+    // sphere), so store the image bottom row first.
+    '--lower_left_maps_to_s0t0',
     '--genmipmap',
     '--assign_oetf',
     entry.transfer,

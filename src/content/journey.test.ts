@@ -37,7 +37,15 @@ const ROUTE = [
   'rhea',
   'iapetus',
   'enceladus',
+  'support-comet',
+  'recruiter-comet',
+  'upcoming-comet',
+  'pluto',
+  'charon',
+  'arrokoth',
+  'eris',
 ] as const;
+const SMALL_CARDS = ['support-comet', 'recruiter-comet', 'upcoming-comet', 'arrokoth', 'eris'];
 const HEADCOUNT = /\d+\+?\s*(people|employees|engineers|staff)/i;
 
 const stopById = (id: string) => {
@@ -47,7 +55,7 @@ const stopById = (id: string) => {
 };
 
 describe('journey content', () => {
-  it('lists Earth, the Moon, the inner system, then the gas giants in route order', () => {
+  it('lists Earth, the Moon, the inner system, the gas giants, then the outer system in order', () => {
     expect(STOPS.map((s) => s.id)).toEqual(ROUTE);
   });
 
@@ -123,6 +131,34 @@ describe('journey content', () => {
     expect(stop.text).toMatch(/macOS/);
     expect(stop.text).toMatch(/iOS/);
     expect(stop.tech).toEqual(expect.arrayContaining(['Rust', 'Swift', 'WebAssembly']));
+  });
+
+  it('gives the outer-system cards 15-50 words, 6-12 chips on Pluto and Charon, 2-6 elsewhere', () => {
+    for (const id of [...SMALL_CARDS, 'pluto', 'charon']) {
+      const stop = stopById(id);
+      const words = countWords(stop.text);
+      expect(words, id).toBeGreaterThanOrEqual(15);
+      expect(words, id).toBeLessThanOrEqual(50);
+      const chips = stop.tech?.length ?? 0;
+      const [min, max] = id === 'pluto' || id === 'charon' ? [6, 12] : [2, 6];
+      expect(chips, id).toBeGreaterThanOrEqual(min);
+      expect(chips, id).toBeLessThanOrEqual(max);
+    }
+  });
+
+  it('states the agent comets’ status honestly, with no links to their private repos', () => {
+    const support = stopById('support-comet');
+    expect(support.text).toMatch(/prototype/i);
+    expect(support.links).toEqual([]);
+    const recruiter = stopById('recruiter-comet');
+    expect(recruiter.unverified).toContain('built');
+    expect(recruiter.links).toEqual([]);
+    expect(stopById('upcoming-comet').title).toMatch(/coming up/i);
+  });
+
+  it('names no institution and no security teaching on Eris', () => {
+    const { text, title } = stopById('eris');
+    expect(`${title} ${text}`).not.toMatch(/universit|institut|college|school|academy|security/i);
   });
 
   it('introduces the owner on Earth without a headcount', () => {

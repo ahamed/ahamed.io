@@ -33,11 +33,11 @@ const SPIN_HEADER = /* glsl */ `
   }
 `;
 
-function createBeltMeshes(options: BeltOptions) {
+function createBeltMeshes(options: BeltOptions, color: string, name: string) {
   const belt = createBelt(options);
   const uTime = { value: 0 };
   const material = new MeshStandardMaterial({
-    name: 'asteroid-belt',
+    name,
     vertexColors: true,
     roughness: 0.95,
     metalness: 0,
@@ -65,7 +65,7 @@ function createBeltMeshes(options: BeltOptions) {
   const meshes = BELT_SHAPES.map((shape, s) => {
     const members: number[] = [];
     for (let i = 0; i < belt.count; i++) if (belt.shapes[i] === s) members.push(i);
-    const geometry = createRockGeometry(shape, ROCK_DETAIL, ROCK_COLOR);
+    const geometry = createRockGeometry(shape, ROCK_DETAIL, color);
     const axes = new Float32Array(members.length * 3);
     const rates = new Float32Array(members.length);
     const mesh = new InstancedMesh(geometry, material, members.length);
@@ -101,11 +101,21 @@ function createBeltMeshes(options: BeltOptions) {
 }
 
 /**
- * Sparse asteroid field around the belt section of the route: one instanced mesh per rock
+ * A sparse rock field around a section of the route (the asteroid belt, or the Kuiper belt
+ * with an icy colour): one instanced mesh per rock
  * shape (≤ 3 draw calls), tumbling on the GPU; the tumble holds still under reduced motion.
  */
-export function AsteroidBelt({ options }: { options: BeltOptions }) {
-  const belt = useMemo(() => createBeltMeshes(options), [options]);
+export function AsteroidBelt({
+  options,
+  color = ROCK_COLOR,
+  name = 'asteroid-belt',
+}: {
+  options: BeltOptions;
+  /** Base rock colour (sRGB). */
+  color?: string;
+  name?: string;
+}) {
+  const belt = useMemo(() => createBeltMeshes(options, color, name), [options, color, name]);
   useEffect(() => belt.dispose, [belt]);
   useShaderClock(belt.advance);
   const groupRef = useRef<Group>(null);
@@ -118,7 +128,7 @@ export function AsteroidBelt({ options }: { options: BeltOptions }) {
     group.visible = beltInRange(camera.position.z, options, margin);
   });
   return (
-    <group ref={groupRef} name="asteroid-belt">
+    <group ref={groupRef} name={name}>
       {belt.meshes.map((mesh) => (
         <primitive key={mesh.name} object={mesh} />
       ))}

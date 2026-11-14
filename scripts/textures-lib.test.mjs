@@ -21,11 +21,13 @@ describe('TEXTURES manifest', () => {
   it('lists every shipped body and sky texture once', () => {
     expect(TEXTURES.map((e) => e.name).sort()).toEqual([
       '1k_callisto',
+      '1k_charon',
       '1k_enceladus',
       '1k_europa',
       '1k_ganymede',
       '1k_iapetus',
       '1k_io',
+      '1k_pluto',
       '1k_rhea',
       '1k_titan',
       '2k_earth_clouds',
@@ -115,6 +117,12 @@ describe('toktxArgs', () => {
       '--resize',
       '2048x16',
     ]);
+  });
+
+  it('stores every texture bottom row first, the way three.js samples it (KTX2 is never flipped)', () => {
+    for (const e of TEXTURES) {
+      expect(toktxArgs(e, 'in', 'out.ktx2'), e.name).toContain('--lower_left_maps_to_s0t0');
+    }
   });
 
   it('keeps the cloud mask linear', () => {

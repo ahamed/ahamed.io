@@ -19,7 +19,8 @@ Planet, ring and sky textures by [Solar System Scope](https://www.solarsystemsco
 ## U.S. Geological Survey (public domain)
 
 Moon maps from global mosaics by the U.S. Geological Survey Astrogeology Science Center, made from
-NASA Voyager, Galileo and Cassini images. "USGS-authored or produced data and information are considered
+NASA Voyager, Galileo, Cassini and New Horizons images. The Pluto and Charon mosaics have no data for
+the southern hemisphere, which was in darkness during the New Horizons flyby. "USGS-authored or produced data and information are considered
 to be in the U.S. Public Domain"
 ([USGS copyrights and credits](https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits)).
 Credit: U.S. Geological Survey Astrogeology Science Center; NASA/JPL.
@@ -39,6 +40,8 @@ Each source was downloaded from `https://planetarymaps.usgs.gov/mosaic/<file>` a
 | `1k_rhea.ktx2`      | `Rhea_Cassini_Voyager_mosaic_global_417m.tif`            |
 | `1k_iapetus.ktx2`   | `Iapetus_Cassini_Voyager_mosaic_global_783m.tif`         |
 | `1k_enceladus.ktx2` | `Enceladus_Cassini_mosaic_global_110m.tif`               |
+| `1k_pluto.ktx2`     | `Pluto_NewHorizons_Global_Mosaic_300m_Jul2017_8bit.tif`  |
+| `1k_charon.ktx2`    | `Charon_NewHorizons_Global_Mosaic_300m_Jul2017_8bit.tif` |
 
 Each file is a KTX2 (Basis Universal) GPU-compressed encoding made by `pnpm textures`. Phobos,
 Deimos and the asteroids are generated in code.

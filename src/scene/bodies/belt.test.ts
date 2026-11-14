@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { STOPS } from '../../content/journey';
 import { buildRoute } from '../../journey/route';
-import { BELT_SHAPES, beltSpan, createBelt, type BeltOptions } from './belt';
+import { BELT_SHAPES, beltSpan, createBelt, spanAround, type BeltOptions } from './belt';
 
 const options: BeltOptions = {
   count: 2500,
@@ -105,5 +105,20 @@ describe('beltSpan', () => {
     const inner = buildRoute(STOPS.slice(0, STOPS.findIndex((s) => s.id === 'hygiea') + 1));
     const zi = (id: string) => inner.bodies.find((b) => b.id === id)?.position[2] ?? NaN;
     expect(beltSpan(inner).zEnd).toBeCloseTo((zi('hygiea') - inner.length) / 2, 9);
+  });
+});
+
+describe('spanAround', () => {
+  const route = buildRoute(STOPS);
+  const z = (id: string) => route.bodies.find((b) => b.id === id)?.position[2] ?? NaN;
+
+  it('gives the asteroid belt the same span as beltSpan', () => {
+    expect(spanAround(route, 'ceres', 'hygiea')).toEqual(beltSpan(route));
+  });
+
+  it('spans the Kuiper belt from before Pluto to past Eris, the last body', () => {
+    const { zStart, zEnd } = spanAround(route, 'pluto', 'eris');
+    expect(zStart).toBeCloseTo((z('upcoming-comet') + z('pluto')) / 2, 9);
+    expect(zEnd).toBeCloseTo((z('eris') - route.length) / 2, 9);
   });
 });

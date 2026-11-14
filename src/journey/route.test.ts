@@ -129,6 +129,29 @@ describe('buildRoute', () => {
     expect(r('iapetus')).toBeGreaterThanOrEqual(r('enceladus'));
   });
 
+  it('splits the Saturn to Pluto cruise into four even legs with the three comets', () => {
+    const cp = (id: string) => route.closePoints[STOPS.findIndex((s) => s.id === id)] ?? NaN;
+    const ids = ['enceladus', 'support-comet', 'recruiter-comet', 'upcoming-comet', 'pluto'];
+    const legs = ids.slice(1).map((id, i) => cp(id) - cp(ids[i] ?? ''));
+    const mean = legs.reduce((a, b) => a + b, 0) / legs.length;
+    for (const leg of legs) expect(Math.abs(leg - mean) / mean).toBeLessThan(0.25);
+  });
+
+  it('keeps comets on the planet side and Charon opposite Pluto', () => {
+    const x = (id: string) => route.bodies.find((b) => b.id === id)?.position[0] ?? NaN;
+    for (const id of [
+      'support-comet',
+      'recruiter-comet',
+      'upcoming-comet',
+      'pluto',
+      'arrokoth',
+      'eris',
+    ]) {
+      expect(x(id), id).toBeGreaterThan(0);
+    }
+    expect(x('charon')).toBeLessThan(0);
+  });
+
   it('writes positions along the path into a provided vector', () => {
     const out: Vec3 = [0, 0, 0];
     pointAt(route, 0.5, out);

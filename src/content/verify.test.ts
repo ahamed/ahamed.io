@@ -17,6 +17,7 @@ describe('listUnverified', () => {
       'io.text.role',
       'europa.text.role',
       'ganymede.text.role',
+      'recruiter-comet.text.built',
     ]);
   });
 

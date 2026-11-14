@@ -41,6 +41,22 @@ async function renderBelt() {
   return { renderer, meshes, time, frames };
 }
 
+describe('AsteroidBelt presets', () => {
+  it('names the belt and tints its rocks with the given colour', async () => {
+    const plain = await ReactThreeTestRenderer.create(<AsteroidBelt options={options} />);
+    const icy = await ReactThreeTestRenderer.create(
+      <AsteroidBelt options={options} name="kuiper-belt" color="#9fb0c2" />,
+    );
+    expect(plain.scene.instance.getObjectByName('asteroid-belt')).toBeDefined();
+    expect(icy.scene.instance.getObjectByName('kuiper-belt')).toBeDefined();
+    const firstColour = (root: Object3D) =>
+      Array.from(instanced(root)[0]?.geometry.getAttribute('color').array.slice(0, 3) ?? []);
+    expect(firstColour(icy.scene.instance)).not.toEqual(firstColour(plain.scene.instance));
+    await plain.unmount();
+    await icy.unmount();
+  });
+});
+
 describe('AsteroidBelt', () => {
   it('draws every rock with at most 3 instanced meshes', async () => {
     stubReducedMotion(false);
