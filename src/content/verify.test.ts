@@ -6,7 +6,6 @@ describe('listUnverified', () => {
   // Update this list whenever the owner confirms (or a change adds) an unverified fact.
   it('tracks the exact outstanding set of unverified facts', () => {
     expect(listUnverified(STOPS)).toEqual([
-      'earth.links.linkedin',
       'moon.timeline.corner-case',
       'moon.timeline.ollyo',
       'phobos.text.release-date',

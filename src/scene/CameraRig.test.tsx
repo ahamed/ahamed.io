@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { STOPS } from '../content/journey';
 import { buildRoute } from '../journey/route';
 import { createJourneyStore, journeyRuntime } from '../store/journey';
+import { finaleLayer } from '../ui/Finale/registry';
 import { dialogElements, dialogSizes } from '../ui/TerminalDialog/registry';
 import { CameraRig } from './CameraRig';
 import { FollowCamera } from './space/FollowCamera';
@@ -244,4 +245,80 @@ describe('CameraRig dialog placement beside a giant', () => {
       dialogSizes.delete(id);
     },
   );
+});
+
+describe('CameraRig finale', () => {
+  const shipZ = (p: number) => -p * route.length;
+  const heliopause = route.closePoints.at(-1) ?? 0.8;
+
+  async function settle(target: number) {
+    const store = createJourneyStore(route.closePoints);
+    const cameraRef: { current: Camera | null } = { current: null };
+    const renderer = await ReactThreeTestRenderer.create(
+      <>
+        <CaptureCamera
+          onCamera={(c) => {
+            cameraRef.current = c;
+          }}
+        />
+        <CameraRig route={route} store={store} voyager={{ current: null }} />
+      </>,
+    );
+    store.getState().snapTo(target);
+    journeyRuntime.position = target;
+    const frames = async (count: number) => {
+      await ReactThreeTestRenderer.act(async () => {
+        await renderer.advanceFrames(count, 1 / 30);
+      });
+    };
+    await frames(5);
+    if (!cameraRef.current) throw new Error('no camera');
+    return { renderer, store, camera: cameraRef.current, frames };
+  }
+
+  it('keeps the chase camera behind Voyager at the heliopause stop, with the finale hidden', async () => {
+    const { renderer, store, camera } = await settle(heliopause);
+    expect(camera.position.z).toBeGreaterThan(shipZ(heliopause));
+    expect(store.getState().finaleShown).toBe(false);
+    await renderer.unmount();
+  });
+
+  it('ends in front of Voyager, facing back toward Earth, with the finale shown', async () => {
+    const { renderer, store, camera } = await settle(1);
+    expect(camera.position.z).toBeLessThan(shipZ(1));
+    expect(camera.getWorldDirection(new Vector3()).z).toBeGreaterThan(0.9);
+    expect(store.getState().finaleShown).toBe(true);
+    await renderer.unmount();
+  });
+
+  it('writes the reveal and the dot position onto the finale layer', async () => {
+    const element = document.createElement('div');
+    finaleLayer.element = element;
+    const { renderer } = await settle(1);
+    expect(Number(element.style.getPropertyValue('--reveal'))).toBeCloseTo(1);
+    expect(element.dataset.dot).toBe('shown');
+    expect(element.style.getPropertyValue('--dot-x')).toMatch(/px$/);
+    await renderer.unmount();
+    finaleLayer.element = null;
+  });
+
+  it('snaps forward to the end when input stops partway through the turn', async () => {
+    const { renderer, store, frames } = await settle(0.9);
+    await frames(2);
+    expect(store.getState().target).toBe(1);
+    await renderer.unmount();
+  });
+
+  it('flies a Back to Earth rewind from the target and ends it at the start', async () => {
+    const { renderer, store, frames } = await settle(1);
+    store.getState().flyBack(performance.now() - 2000, false);
+    await frames(1);
+    expect(store.getState().target).toBeGreaterThan(0.3);
+    expect(store.getState().target).toBeLessThan(0.7);
+    store.getState().flyBack(performance.now() - 5000, false);
+    await frames(1);
+    expect(store.getState().target).toBe(0);
+    expect(store.getState().flight).toBeNull();
+    await renderer.unmount();
+  });
 });

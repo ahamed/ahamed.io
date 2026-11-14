@@ -1,0 +1,134 @@
+.layer {
+  --reveal: 0;
+  --dot-x: 50vw;
+  --dot-y: 33vh;
+
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Corner brackets round the Pale Blue Dot, with a small label beside them. */
+.bracket {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  transform: translate3d(calc(var(--dot-x) - 50%), calc(var(--dot-y) - 50%), 0);
+  color: var(--color-accent);
+  background:
+    linear-gradient(currentColor, currentColor) top left / 0.5rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) top left / 1px 0.5rem no-repeat,
+    linear-gradient(currentColor, currentColor) top right / 0.5rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) top right / 1px 0.5rem no-repeat,
+    linear-gradient(currentColor, currentColor) bottom left / 0.5rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) bottom left / 1px 0.5rem no-repeat,
+    linear-gradient(currentColor, currentColor) bottom right / 0.5rem 1px no-repeat,
+    linear-gradient(currentColor, currentColor) bottom right / 1px 0.5rem no-repeat;
+  opacity: 0.8;
+  will-change: transform;
+}
+
+.layer[data-dot='shown'] .bracket {
+  display: block;
+}
+
+.label {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.5rem);
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+/* Caption and card: centred, starting a little below the dot so it stays uncovered. */
+.content {
+  position: absolute;
+  top: calc(var(--dot-y) + 2.5rem);
+  left: 50%;
+  width: min(28rem, calc(100vw - 2rem));
+  transform: translate3d(-50%, calc((1 - var(--reveal)) * 1rem), 0);
+  opacity: var(--reveal);
+  text-align: center;
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+  pointer-events: auto;
+}
+
+.content[hidden] {
+  display: none;
+}
+
+.caption {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #e6f4f1;
+}
+
+.fact {
+  margin: 0.35rem 0 1.25rem;
+  font-size: 0.75rem;
+  opacity: 0.65;
+}
+
+.card {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  border-radius: 0.5rem;
+  box-shadow: 0 0 2rem color-mix(in srgb, var(--color-accent) 12%, transparent);
+  backdrop-filter: blur(6px);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.prompt {
+  opacity: 0.6;
+}
+
+.body {
+  margin: 0;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links a {
+  color: inherit;
+}
+
+.back {
+  margin-top: 1rem;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.back:hover,
+.back:focus-visible {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}

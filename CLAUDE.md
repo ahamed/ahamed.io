@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A 3D scroll-driven portfolio for ahamed.io. The visitor is Voyager 1, flying its real route from Earth to interstellar space. Each celestial body carries one content card, shown in a terminal-style dialog that opens near the body and closes as it passes. The journey ends with a contact form. `plan.md` holds the settled design decisions, the journey content map and milestones M0–M10. Read it before starting a milestone.
+A 3D scroll-driven portfolio for ahamed.io. The visitor is Voyager 1, flying its real route from Earth to interstellar space. Each celestial body carries one content card, shown in a terminal-style dialog that opens near the body and closes as it passes. The journey ends with the Pale Blue Dot look-back and a contact card. `plan.md` holds the settled design decisions, the journey content map and milestones M0–M10. Read it before starting a milestone.
 
 Stack: Vite, React 19, TypeScript 6.0 (strict), pnpm, CSS Modules with CSS custom properties. React Three Fiber, drei, postprocessing and zustand arrive in M1.
 
@@ -45,7 +45,7 @@ TypeScript is pinned to `6.0.3`. Do not upgrade to TS 7 until typescript-eslint'
   - `src/audio/`: Web Audio parameter builders.
 - **Thin components over those modules.**
   - `src/scene/`: R3F camera rig, Voyager model, bodies, GLSL shaders.
-  - `src/ui/`: dialog, HUD, boot loader, contact form, text mode.
+  - `src/ui/`: dialog, HUD, boot loader, finale contact card, text mode.
   - `src/input/`: scroll, keyboard and touch hooks.
 - **State.** `src/store/` holds zustand. Frame-loop code reads it transiently (`getState()` inside `useFrame`), not through subscriptions.
 - **App entry.** `src/app/App.tsx`, mounted by `src/main.tsx`. Design tokens are in `src/styles/tokens.css`: bg `#0F1726`, panel `rgba(30,58,64,.72)`, accent `#67D3C1`.

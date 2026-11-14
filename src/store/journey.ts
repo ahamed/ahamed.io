@@ -13,6 +13,10 @@ export interface JourneyState {
   lastInputAt: number;
   openStopId: string | null;
   audioUnlocked: boolean;
+  /** A running "Back to Earth" rewind, or null. Any input cancels it. */
+  flight: Flight | null;
+  /** Whether the finale's caption and contact card are showing. */
+  finaleShown: boolean;
   nudge: (delta: number, now: number) => void;
   step: (dir: 1 | -1, now: number) => void;
   goToStop: (dir: 1 | -1, now: number) => void;
@@ -21,6 +25,19 @@ export interface JourneyState {
   snapTo: (target: number) => void;
   setOpenStop: (id: string | null) => void;
   setAudioUnlocked: () => void;
+  /** Starts the rewind to the start; under reduced motion jumps there instead. */
+  flyBack: (now: number, reduced: boolean) => void;
+  /** Moves the target for the rewind; counts as input so snapping waits. */
+  flyTo: (target: number, now: number) => void;
+  endFlight: () => void;
+  setFinaleShown: (shown: boolean) => void;
+}
+
+export interface Flight {
+  /** Target progress when the rewind started. */
+  from: number;
+  /** `performance.now()` when it started. */
+  startAt: number;
 }
 
 export function createJourneyStore(closePoints: readonly number[]) {
@@ -33,20 +50,26 @@ export function createJourneyStore(closePoints: readonly number[]) {
     lastInputAt: 0,
     openStopId: null,
     audioUnlocked: false,
+    flight: null,
+    finaleShown: false,
     nudge: (delta, now) => {
-      set({ target: applyDelta(get().target, delta), lastInputAt: now });
+      set({ target: applyDelta(get().target, delta), lastInputAt: now, flight: null });
     },
     step: (dir, now) => {
       get().nudge(dir * stepSize, now);
     },
     goToStop: (dir, now) => {
-      set({ target: neighbourTarget(get().target, closePoints, dir), lastInputAt: now });
+      set({
+        target: neighbourTarget(get().target, closePoints, dir),
+        lastInputAt: now,
+        flight: null,
+      });
     },
     goToStart: (now) => {
-      set({ target: 0, lastInputAt: now });
+      set({ target: 0, lastInputAt: now, flight: null });
     },
     goToEnd: (now) => {
-      set({ target: 1, lastInputAt: now });
+      set({ target: 1, lastInputAt: now, flight: null });
     },
     snapTo: (target) => {
       set({ target: clampProgress(target) });
@@ -56,6 +79,23 @@ export function createJourneyStore(closePoints: readonly number[]) {
     },
     setAudioUnlocked: () => {
       set({ audioUnlocked: true });
+    },
+    flyBack: (now, reduced) => {
+      if (reduced) {
+        journeyRuntime.position = 0;
+        set({ target: 0, lastInputAt: now, flight: null });
+        return;
+      }
+      set({ flight: { from: get().target, startAt: now }, lastInputAt: now });
+    },
+    flyTo: (target, now) => {
+      set({ target: clampProgress(target), lastInputAt: now });
+    },
+    endFlight: () => {
+      if (get().flight) set({ flight: null });
+    },
+    setFinaleShown: (shown) => {
+      if (get().finaleShown !== shown) set({ finaleShown: shown });
     },
   }));
 }

@@ -1,4 +1,4 @@
-import type { Stop } from './schema';
+import type { Finale, Stop } from './schema';
 
 /**
  * Content source of truth for the voyage. Order = route order.
@@ -13,8 +13,7 @@ export const STOPS: readonly Stop[] = [
     timeline: [],
     links: [
       { label: 'GitHub', href: 'https://github.com/ahamed', verified: true },
-      // VERIFY: real LinkedIn profile URL not provided yet; hidden until verified.
-      { label: 'LinkedIn', href: 'https://www.linkedin.com/', verified: false },
+      { label: 'LinkedIn', href: 'https://www.linkedin.com/in/sisylana/', verified: true },
     ],
   },
   {
@@ -340,3 +339,16 @@ export const STOPS: readonly Stop[] = [
     ],
   },
 ];
+
+/** The end of the voyage: the Pale Blue Dot caption and the contact card. */
+export const FINALE: Finale = {
+  caption: 'Every line of code I’ve shipped was written on that dot.',
+  fact: 'Earth from 6 billion km · Voyager 1 · 14 Feb 1990',
+  title: 'Open a channel',
+  body: 'Building something ambitious, or want to talk engineering leadership and AI-native teams? Send a signal.',
+  links: [
+    { label: 'Email', href: 'mailto:sajeeb07ahamed@gmail.com', verified: true },
+    { label: 'GitHub', href: 'https://github.com/ahamed', verified: true },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/sisylana/', verified: true },
+  ],
+};

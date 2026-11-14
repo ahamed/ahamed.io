@@ -2,6 +2,14 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, type RefObject } from 'react';
 import { Box3, MathUtils, PerspectiveCamera, Vector3, type Camera, type Group } from 'three';
 import { aimTowardInto, aimWeight, chasePoseInto, type ChasePose } from '../journey/camera';
+import {
+  DOT_FROM_TURN,
+  finalePoseInto,
+  finaleReveal,
+  finaleSnap,
+  finaleTurn,
+} from '../journey/finale';
+import { flyBackDone, flyBackTarget } from '../journey/flyBack';
 import { damp } from '../journey/progress';
 import {
   easeOffset,
@@ -13,10 +21,11 @@ import {
 } from '../journey/placement';
 import { pointAt, type Route, type Vec3 } from '../journey/route';
 import { stopSizesInto } from '../journey/sizes';
-import { snapTarget } from '../journey/snap';
+import { SNAP_IDLE_MS, snapTarget } from '../journey/snap';
 import { stopRanges } from '../journey/stops';
 import { chooseOpenStop, dialogOpacity, dialogScale } from '../journey/visibility';
 import { journeyRuntime, type JourneyStore } from '../store/journey';
+import { finaleLayer } from '../ui/Finale/registry';
 import { dialogElements, dialogSizes } from '../ui/TerminalDialog/registry';
 import { useReducedMotion } from './useReducedMotion';
 
@@ -53,13 +62,19 @@ export function CameraRig({ route, store, voyager, sky }: Props) {
     const state = store.getState();
     const now = performance.now();
 
-    const snap = snapTarget(
-      state.target,
-      route.closePoints,
-      scratch.ranges,
-      now - state.lastInputAt,
-    );
-    if (snap !== null && snap !== state.target) state.snapTo(snap);
+    // "Back to Earth": the rewind moves the target itself, and counts as input so nothing snaps.
+    if (state.flight) {
+      const elapsed = now - state.flight.startAt;
+      state.flyTo(flyBackTarget(state.flight.from, elapsed), now);
+      if (flyBackDone(elapsed)) state.endFlight();
+    }
+
+    const idleMs = now - store.getState().lastInputAt;
+    const current = store.getState().target;
+    const snap =
+      snapTarget(current, route.closePoints, scratch.ranges, idleMs) ??
+      (idleMs >= SNAP_IDLE_MS ? finaleSnap(current) : null);
+    if (snap !== null && snap !== current) state.snapTo(snap);
 
     const target = store.getState().target;
     const previous = journeyRuntime.position;
@@ -78,11 +93,17 @@ export function CameraRig({ route, store, voyager, sky }: Props) {
     }
     const nearestBody = route.bodies[nearest];
     const weight = aimWeight(scratch.sizes[nearest] ?? 0, size.width / Math.max(1, size.height));
-    if (nearestBody) aimTowardInto(scratch.aim, scratch.pose.lookAt, nearestBody.position, weight);
+    if (nearestBody) {
+      aimTowardInto(scratch.pose.lookAt, scratch.pose.lookAt, nearestBody.position, weight);
+    }
+    // The finale: orbit to Voyager's front and look back at Earth, after the body aim.
+    pointAt(route, p, scratch.ship);
+    finalePoseInto(scratch.pose, scratch.ship, finaleTurn(p), scratch.earth);
     camera.position.set(...scratch.pose.position);
-    camera.lookAt(...scratch.aim);
+    camera.lookAt(...scratch.pose.lookAt);
     sky?.current?.position.copy(camera.position);
-    if (voyager.current) voyager.current.position.set(...pointAt(route, p, scratch.ship));
+    if (voyager.current) voyager.current.position.set(...scratch.ship);
+    writeFinale(scratch, p, camera, size, state);
 
     const currentIndex = scratch.openIndex;
     const openIndex = chooseOpenStop(scratch.sizes, currentIndex);
@@ -159,11 +180,35 @@ export function CameraRig({ route, store, voyager, sky }: Props) {
   return null;
 }
 
+/** Shows the caption and card, and tells the bracket where the Pale Blue Dot is on screen. */
+function writeFinale(
+  scratch: Scratch,
+  p: number,
+  camera: Camera,
+  size: { width: number; height: number },
+  state: ReturnType<JourneyStore['getState']>,
+): void {
+  const reveal = finaleReveal(p);
+  state.setFinaleShown(reveal > 0);
+  const element = finaleLayer.element;
+  if (!element) return;
+  writeVar(element, '--reveal', reveal, '', scratch.finaleLast, 0);
+  const shown = finaleTurn(p) > DOT_FROM_TURN;
+  const dotState = shown ? 'shown' : 'hidden';
+  if (element.dataset.dot !== dotState) element.dataset.dot = dotState;
+  if (!shown) return;
+  const dot = projectInto(scratch.anchor.set(...scratch.earth), camera, size);
+  writeVar(element, '--dot-x', dot.x, 'px', scratch.finaleLast, 1);
+  writeVar(element, '--dot-y', dot.y, 'px', scratch.finaleLast, 2);
+}
+
 interface Scratch {
+  /** Earth's position: where the Pale Blue Dot is, seen from the finale. */
+  earth: Vec3;
+  finaleLast: number[];
   ranges: ReturnType<typeof stopRanges>;
   pose: ChasePose;
   ship: Vec3;
-  aim: Vec3;
   sizes: number[];
   anchor: Vector3;
   openIndex: number | null;
@@ -187,11 +232,13 @@ function createScratch(route: Route): Scratch {
   const disc = { x: 0, y: 0, r: 0 };
   const dialog = { w: 0, h: 0 };
   const voyagerRect: Rect = { x: 0, y: 0, w: 0, h: 0 };
+  const earth = route.bodies.find((b) => b.body === 'earth')?.position ?? [0, 0, 0];
   return {
+    earth: [...earth],
+    finaleLast: [NaN, NaN, NaN],
     ranges: stopRanges(route.closePoints),
     pose: { position: [0, 0, 0], lookAt: [0, 0, 0] },
     ship: [0, 0, 0],
-    aim: [0, 0, 0],
     sizes: route.bodies.map(() => 0),
     anchor: new Vector3(),
     openIndex: null,

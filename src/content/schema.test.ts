@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateStops, type Stop } from './schema';
+import { finaleSchema, validateStops, type Stop } from './schema';
 
 const validStop: Stop = {
   id: 'earth',
@@ -86,5 +86,24 @@ describe('validateStops', () => {
   it('rejects an empty unverified claim id', () => {
     const result = validateStops([{ ...validStop, unverified: [''] }]);
     expect(result.success).toBe(false);
+  });
+});
+
+describe('finaleSchema', () => {
+  const finale = {
+    caption: 'c',
+    fact: 'f',
+    title: 't',
+    body: 'Say hello.',
+    links: [{ label: 'Email', href: 'mailto:someone@example.com', verified: true }],
+  };
+
+  it('accepts a complete finale with a mailto link', () => {
+    expect(finaleSchema.safeParse(finale).success).toBe(true);
+  });
+
+  it('rejects an empty caption or a body over 40 words', () => {
+    expect(finaleSchema.safeParse({ ...finale, caption: '' }).success).toBe(false);
+    expect(finaleSchema.safeParse({ ...finale, body: 'word '.repeat(41) }).success).toBe(false);
   });
 });

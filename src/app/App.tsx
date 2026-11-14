@@ -1,10 +1,11 @@
 import { lazy, Suspense, useRef, useState } from 'react';
-import { STOPS } from '../content/journey';
+import { FINALE, STOPS } from '../content/journey';
 import { useKeyboardInput } from '../input/useKeyboardInput';
 import { useTouchInput } from '../input/useTouchInput';
 import { useWheelInput } from '../input/useWheelInput';
 import { canUseWebGL } from '../scene/webgl';
 import { journeyStore } from '../store/journey';
+import { FinaleLayer } from '../ui/Finale/FinaleLayer';
 import { DialogLayer } from '../ui/TerminalDialog/DialogLayer';
 import styles from './App.module.css';
 import { shouldInspect } from './inspect';
@@ -38,6 +39,7 @@ export function App() {
             <Voyage />
           </Suspense>
           <DialogLayer stops={STOPS} />
+          <FinaleLayer finale={FINALE} store={journeyStore} />
         </>
       ) : (
         <p role="status" className={styles.fallback}>

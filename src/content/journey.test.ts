@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { STOPS } from './journey';
-import { countWords, validateStops } from './schema';
+import { FINALE, STOPS } from './journey';
+import { countWords, finaleSchema, validateStops } from './schema';
 
 const allText = STOPS.map((stop) =>
   [
@@ -184,10 +184,17 @@ describe('journey content', () => {
     expect(text).not.toMatch(HEADCOUNT);
   });
 
-  it('links Earth to GitHub', () => {
+  it('links Earth to GitHub and LinkedIn', () => {
     const { links } = stopById('earth');
     expect(links).toContainEqual(
       expect.objectContaining({ href: 'https://github.com/ahamed', verified: true }),
+    );
+    expect(links).toContainEqual(
+      expect.objectContaining({
+        label: 'LinkedIn',
+        href: 'https://www.linkedin.com/in/sisylana/',
+        verified: true,
+      }),
     );
   });
 
@@ -207,5 +214,25 @@ describe('journey content', () => {
     for (const term of ['publication', 'daffodil', 'cyber security club', 'gcpc']) {
       expect(allText.toLowerCase()).not.toContain(term);
     }
+  });
+});
+
+describe('finale content', () => {
+  it('passes the finale schema', () => {
+    expect(finaleSchema.safeParse(FINALE).success).toBe(true);
+  });
+
+  it('carries the agreed caption, fact line and card title', () => {
+    expect(FINALE.caption).toBe('Every line of code I’ve shipped was written on that dot.');
+    expect(FINALE.fact).toBe('Earth from 6 billion km · Voyager 1 · 14 Feb 1990');
+    expect(FINALE.title).toBe('Open a channel');
+    expect(countWords(FINALE.body)).toBeGreaterThan(0);
+    expect(countWords(FINALE.body)).toBeLessThanOrEqual(40);
+  });
+
+  it('links email, GitHub and LinkedIn, in that order', () => {
+    expect(FINALE.links.map((l) => l.label)).toEqual(['Email', 'GitHub', 'LinkedIn']);
+    expect(FINALE.links[0]?.href).toMatch(/^mailto:[^@\s]+@[^@\s]+$/);
+    expect(FINALE.links.every((l) => l.verified)).toBe(true);
   });
 });

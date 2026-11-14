@@ -84,7 +84,7 @@ test.describe('voyage', () => {
     await expect(earth).toHaveCSS('background-color', 'rgba(30, 58, 64, 0.72)');
     await expect(earth).toHaveCSS('color', 'rgb(103, 211, 193)');
     await expect(earth.getByRole('link', { name: 'GitHub' })).toBeVisible();
-    await expect(earth.getByRole('link', { name: 'LinkedIn' })).toHaveCount(0);
+    await expect(earth.getByRole('link', { name: 'LinkedIn' })).toBeVisible();
   });
 
   test('PageDown flies to the Moon and PageUp returns to Earth', async ({ page }) => {
@@ -169,6 +169,55 @@ test.describe('voyage', () => {
     await page.keyboard.press('Home');
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
   });
+
+  test('End turns back to the Pale Blue Dot and shows the contact card', async ({ page }) => {
+    await page.keyboard.press('End');
+    const card = page.getByRole('region', { name: 'Open a channel' });
+    await expect(card).toBeVisible(OPEN_TIMEOUT);
+    await expect(
+      page.getByText('Every line of code I’ve shipped was written on that dot.'),
+    ).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Email' })).toHaveAttribute('href', /^mailto:/);
+    await expect(card.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+      'href',
+      'https://github.com/ahamed',
+    );
+    await expect(card.getByRole('link', { name: 'LinkedIn' })).toHaveAttribute(
+      'href',
+      'https://www.linkedin.com/in/sisylana/',
+    );
+    // Fully faded in, and the bracketed dot sits clear of the caption and card.
+    await expect
+      .poll(
+        async () => Number(await card.evaluate((e) => getComputedStyle(e).opacity)),
+        OPEN_TIMEOUT,
+      )
+      .toBeGreaterThan(0.95);
+    const layer = page.locator('[data-finale]');
+    await expect(layer).toHaveAttribute('data-dot', 'shown');
+    const bracket = await layer.locator('[data-bracket]').boundingBox();
+    const content = await card.boundingBox();
+    if (!bracket || !content) throw new Error('missing boxes');
+    expect(bracket.y + bracket.height).toBeLessThanOrEqual(content.y);
+  });
+
+  test('the contact card stays hidden at the heliopause stop', async ({ page }) => {
+    await page.keyboard.press('End');
+    await expect(page.getByRole('region', { name: 'Open a channel' })).toBeVisible(OPEN_TIMEOUT);
+    await page.keyboard.press('PageUp');
+    await expect(dialog(page, 'heliopause')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
+    await expect(page.getByRole('region', { name: 'Open a channel' })).toHaveCount(0);
+    await expect(page.locator('[data-finale]')).toHaveAttribute('data-dot', 'hidden');
+  });
+
+  test('Back to Earth rewinds the voyage to the Earth dialog', async ({ page }) => {
+    await page.keyboard.press('End');
+    const card = page.getByRole('region', { name: 'Open a channel' });
+    await expect(card).toBeVisible(OPEN_TIMEOUT);
+    await card.getByRole('button', { name: 'Back to Earth' }).click();
+    await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
+    await expect(card).toHaveCount(0);
+  });
 });
 
 test.describe('voyage on a phone', () => {
@@ -185,6 +234,24 @@ test.describe('voyage on a phone', () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('fits the contact card inside the screen at the end', async ({ page }) => {
+    await page.goto('/');
+    await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
+    await page.keyboard.press('End');
+    const card = page.getByRole('region', { name: 'Open a channel' });
+    await expect(card).toBeVisible(OPEN_TIMEOUT);
+    await expect
+      .poll(
+        async () => Number(await card.evaluate((e) => getComputedStyle(e).opacity)),
+        OPEN_TIMEOUT,
+      )
+      .toBeGreaterThan(0.95);
+    const box = await card.boundingBox();
+    expect(box?.x).toBeGreaterThanOrEqual(0);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(375);
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(812);
   });
 });
 

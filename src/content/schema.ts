@@ -65,6 +65,20 @@ export const stopSchema = z.object({
   unverified: z.array(z.string().min(1)).optional(),
 });
 
+const MAX_FINALE_WORDS = 40;
+
+/** The Pale Blue Dot caption and the contact card that end the voyage. */
+export const finaleSchema = z.object({
+  caption: z.string().min(1),
+  fact: z.string().min(1),
+  title: z.string().min(1),
+  body: z.string().refine((t) => countWords(t) >= 1 && countWords(t) <= MAX_FINALE_WORDS, {
+    message: `body must be 1-${String(MAX_FINALE_WORDS)} words`,
+  }),
+  links: z.array(linkSchema).min(1),
+});
+
+export type Finale = z.infer<typeof finaleSchema>;
 export type Stop = z.infer<typeof stopSchema>;
 export type BodyId = z.infer<typeof bodySchema>;
 export type StopLink = Stop['links'][number];

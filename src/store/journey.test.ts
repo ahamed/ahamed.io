@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createJourneyStore } from './journey';
+import { createJourneyStore, journeyRuntime } from './journey';
 
 const make = () => createJourneyStore([0, 0.8]);
 
@@ -60,5 +60,73 @@ describe('journey store', () => {
     store.getState().snapTo(0.8);
     expect(store.getState().target).toBe(0.8);
     expect(store.getState().lastInputAt).toBe(500);
+  });
+
+  it('starts a Back to Earth rewind from the current target', () => {
+    const store = make();
+    store.getState().goToEnd(100);
+    store.getState().flyBack(500, false);
+    expect(store.getState().flight).toEqual({ from: 1, startAt: 500 });
+    expect(store.getState().target).toBe(1);
+  });
+
+  it('jumps straight to the start under reduced motion', () => {
+    const store = make();
+    store.getState().goToEnd(100);
+    journeyRuntime.position = 1;
+    store.getState().flyBack(500, true);
+    expect(store.getState().flight).toBeNull();
+    expect(store.getState().target).toBe(0);
+    expect(journeyRuntime.position).toBe(0);
+  });
+
+  it('cancels the rewind on any input', () => {
+    const inputs = [
+      (s: ReturnType<typeof make>) => {
+        s.getState().nudge(-0.01, 600);
+      },
+      (s: ReturnType<typeof make>) => {
+        s.getState().step(1, 600);
+      },
+      (s: ReturnType<typeof make>) => {
+        s.getState().goToStop(-1, 600);
+      },
+      (s: ReturnType<typeof make>) => {
+        s.getState().goToStart(600);
+      },
+      (s: ReturnType<typeof make>) => {
+        s.getState().goToEnd(600);
+      },
+    ];
+    for (const input of inputs) {
+      const store = make();
+      store.getState().goToEnd(100);
+      store.getState().flyBack(500, false);
+      input(store);
+      expect(store.getState().flight).toBeNull();
+    }
+  });
+
+  it('flies the rewind by setting the target without counting as input', () => {
+    const store = make();
+    store.getState().goToEnd(100);
+    store.getState().flyBack(500, false);
+    store.getState().flyTo(0.4, 900);
+    expect(store.getState().target).toBe(0.4);
+    expect(store.getState().lastInputAt).toBe(900);
+    expect(store.getState().flight).not.toBeNull();
+    store.getState().endFlight();
+    expect(store.getState().flight).toBeNull();
+  });
+
+  it('records whether the finale is shown, only on change', () => {
+    const store = make();
+    expect(store.getState().finaleShown).toBe(false);
+    let changes = 0;
+    store.subscribe(() => changes++);
+    store.getState().setFinaleShown(true);
+    store.getState().setFinaleShown(true);
+    expect(store.getState().finaleShown).toBe(true);
+    expect(changes).toBe(1);
   });
 });

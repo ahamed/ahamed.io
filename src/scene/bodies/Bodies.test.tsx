@@ -2,6 +2,7 @@ import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { STOPS } from '../../content/journey';
 import { buildRoute } from '../../journey/route';
+import { journeyRuntime } from '../../store/journey';
 import { Bodies } from './Bodies';
 
 // Textures that load at once (a fresh blank texture per name), so each body renders itself.
@@ -69,6 +70,23 @@ describe('Bodies', () => {
     const anchor = renderer.scene.instance.getObjectByName('body-heliopause');
     expect(anchor).toBeDefined();
     expect(anchor?.children).toHaveLength(0);
+    await renderer.unmount();
+  });
+
+  it('hides every body once the Pale Blue Dot shows, so nothing appears beside it', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Bodies route={buildRoute(STOPS)} />);
+    const group = renderer.scene.instance.getObjectByName('bodies');
+    const at = async (p: number) => {
+      journeyRuntime.position = p;
+      await ReactThreeTestRenderer.act(async () => {
+        await renderer.advanceFrames(1, 1 / 60);
+      });
+      return group?.visible;
+    };
+    expect(await at(0.8)).toBe(true);
+    expect(await at(1)).toBe(false);
+    expect(await at(0.8)).toBe(true);
+    journeyRuntime.position = 0;
     await renderer.unmount();
   });
 });

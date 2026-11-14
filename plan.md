@@ -2,7 +2,7 @@
 
 ## Context
 
-Sajeeb has collected profile data from GitHub, Gemini, ChatGPT, Claude and LinkedIn into `data.md`. He wants a 3D, scroll-driven portfolio. The visitor _is_ Voyager 1 and flies the real Voyager 1 route from Earth to interstellar space. Each celestial body carries one piece of content, shown in a terminal-style dialog that opens as the body comes close and shrinks and closes as it passes. The journey ends outside the solar system with a contact form. The repo is empty except for `data.md` (no commits). `openspec`, `pnpm`, `cargo` and `wasm-pack` are installed. All design decisions below were settled in a grilling session.
+Sajeeb has collected profile data from GitHub, Gemini, ChatGPT, Claude and LinkedIn into `data.md`. He wants a 3D, scroll-driven portfolio. The visitor _is_ Voyager 1 and flies the real Voyager 1 route from Earth to interstellar space. Each celestial body carries one piece of content, shown in a terminal-style dialog that opens as the body comes close and shrinks and closes as it passes. The journey ends outside the solar system with the Pale Blue Dot look-back and a contact card. The repo is empty except for `data.md` (no commits). `openspec`, `pnpm`, `cargo` and `wasm-pack` are installed. All design decisions below were settled in a grilling session.
 
 ## Settled decisions
 
@@ -21,7 +21,7 @@ Sajeeb has collected profile data from GitHub, Gemini, ChatGPT, Claude and Linke
 | Dialog        | Anchored beside its body as a DOM overlay positioned each frame via CSS vars (not drei `Html`; decided in M1 for testability), translucent `rgba(30,58,64,.72)` panel, `#67D3C1` text, typewriter reveal, synth "blip". Scale and opacity follow the body's on-screen size; closes below a threshold; reopens when travelling back |
 | Mobile        | Adaptive quality (PerformanceMonitor: 1K textures, fewer instances, lighter post-processing). Below 768px the dialog becomes a bottom sheet. `prefers-reduced-motion` respected                                                                                                                                                    |
 | Audio         | Web Audio synthesis: drone (detuned oscillators + filtered noise + LFO), sci-fi blip, faint plasma-wave texture near the heliopause. Mute button, shortcut M, remembered in localStorage                                                                                                                                           |
-| Contact       | UI only: name, email, message, validation, success state. `submitContact()` is a stub adapter that goes nowhere for now                                                                                                                                                                                                            |
+| Contact       | No form (dropped in the M7 grilling). A terminal-style contact card at the end: email (mailto), GitHub, LinkedIn, and a "Back to Earth" rewind                                                                                                                                                                                     |
 | Content truth | 9 years of experience. **No** publications, **no** Daffodil lecturer, Cyber Security Club or GCPC mentions. Uncertain facts are marked `// VERIFY` and listed below                                                                                                                                                                |
 | Planned work  | One "Upcoming / in orbit" stop: ShopScribe, Bengali news RAG, clinical prescription app, WP Change Intelligence                                                                                                                                                                                                                    |
 | Tests         | Vitest + Testing Library (unit) + Playwright (E2E smoke). No pixel diffs                                                                                                                                                                                                                                                           |
@@ -44,7 +44,7 @@ Sajeeb has collected profile data from GitHub, Gemini, ChatGPT, Claude and Linke
 10. **Arrokoth**: Research interests (MCP for PHP/WP, Shadow DOM widgets, Rust)
 11. **Eris**: Teaching & mentoring (JS/React/Tailwind, practical exam design, no institution named)
 12. **Heliopause**: Leadership & engineering philosophy (+ Ollyocon "AI-Native Engineering" keynote)
-13. **Pale Blue Dot look-back** (camera turns to the tiny Earth) → **Contact form** in interstellar space
+13. **Pale Blue Dot look-back** (camera orbits to Voyager's front and faces the tiny Earth) → **Contact card** (email, GitHub, LinkedIn, Back to Earth)
 
 Each project card shows its name, a 1–2 line description, tech chips and links (GitHub/Packagist where public).
 
@@ -69,7 +69,7 @@ src/
     shaders/      atmosphere, corona, rings, bands, bowShock, noise (GLSL)
   ui/
     TerminalDialog/, Hud/ (Telemetry, ProgressMap, ControlsHint,
-    SignalDelay, MuteButton, AutoplayButton), BootLoader/, ContactForm/,
+    SignalDelay, MuteButton, AutoplayButton), BootLoader/, Finale/,
     TextMode/
   audio/          engine.ts (Web Audio graph), drone.ts, blip.ts
   input/          useScrollInput, useKeyboardInput, useTouchInput
@@ -92,7 +92,7 @@ Every feature follows: OpenSpec proposal → `/grill-me` on the proposal → fai
 - **M4 Inner system**: Mars + moons, asteroid belt (instanced + 4 hero asteroids). _Skills: threejs-geometry (instancing), threejs-shaders (noise displacement), threejs-loaders/threejs-textures (KTX2), threejs-asset-pipeline (texture compression)_
 - **M5 Gas giants**: Jupiter (band shader) + 4 moons, Saturn (ring shader, shadows) + 4 moons. _Skills: threejs-shaders, threejs-textures, threejs-lighting_
 - **M6 Outer system**: comets (tail particles), meteors, Kuiper belt, Pluto/Charon/Arrokoth/Eris, heliopause bow shock, nebula and galaxies. _Skills: threejs-shaders, threejs-geometry (points), threejs-animation_
-- **M7 Finale**: Pale Blue Dot look-back, ContactForm (stub submit). _Skills: threejs-animation_
+- **M7 Finale**: Pale Blue Dot look-back, contact card with links and Back to Earth (the contact form was dropped). _Skills: threejs-animation_
 - **M8 Experience layer**: BootLoader with real progress, HUD (telemetry, progress map with fly-to, hint, signal delay), autoplay, audio engine + mute. _Skills: threejs-loaders (progress), threejs-interaction_
 - **M9 Adaptive/a11y**: PerformanceMonitor quality tiers, mobile bottom sheet, reduced motion, Text mode + hidden semantic HTML, WebGL fallback. _Skills: threejs-performance_
 - **M10 Perf pass**: draw-call and memory budget (target 60 fps desktop, ≥30 fps mid phones), texture memory, disposal. _Skills: threejs-performance, threejs-asset-pipeline_
@@ -104,6 +104,6 @@ Every feature follows: OpenSpec proposal → `/grill-me` on the proposal → fai
 ## Verification
 
 - `pnpm lint && pnpm typecheck && pnpm test` green at every milestone. CI runs the same plus `pnpm e2e`.
-- Unit tests cover: scroll→progress mapping and clamping, damping convergence, snap target selection, stop t-ranges ordered and non-overlapping, dialog open/scale/close thresholds (including reopening on reverse), autoplay dwell from word count and pause-on-input, zod schema for every stop, audio graph params, contact form validation and stub submit, Text mode renders all stops.
-- Playwright E2E: boot → "Begin mission" → Earth dialog visible; ArrowDown ×N → Earth dialog closes and the Moon dialog opens; ArrowUp → Earth dialog reopens; M toggles mute state; Space starts autoplay; End/progress-map click reaches the contact form; `?text` shows all content; no console errors.
-- Manual: `pnpm dev`, then fly the full route in Chrome/Safari and on a phone, and check fps with r3f-perf/stats. The journey must end past the heliopause, with the contact form visible.
+- Unit tests cover: scroll→progress mapping and clamping, damping convergence, snap target selection, stop t-ranges ordered and non-overlapping, dialog open/scale/close thresholds (including reopening on reverse), autoplay dwell from word count and pause-on-input, zod schema for every stop, audio graph params, finale phases and rewind, Text mode renders all stops.
+- Playwright E2E: boot → "Begin mission" → Earth dialog visible; ArrowDown ×N → Earth dialog closes and the Moon dialog opens; ArrowUp → Earth dialog reopens; M toggles mute state; Space starts autoplay; End/progress-map click reaches the contact card; `?text` shows all content; no console errors.
+- Manual: `pnpm dev`, then fly the full route in Chrome/Safari and on a phone, and check fps with r3f-perf/stats. The journey must end past the heliopause, with the contact card visible.

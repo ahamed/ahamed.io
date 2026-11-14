@@ -1,6 +1,10 @@
-import { Suspense } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Suspense, useRef } from 'react';
+import type { Group } from 'three';
 import type { BodyId } from '../../content/schema';
+import { DOT_FROM_TURN, finaleTurn } from '../../journey/finale';
 import type { Route } from '../../journey/route';
+import { journeyRuntime } from '../../store/journey';
 import { Arrokoth } from './Arrokoth';
 import { Comet, type CometVariant } from './Comet';
 import { Earth } from './Earth';
@@ -70,9 +74,17 @@ function Placeholder({ radius }: { radius: number }) {
   );
 }
 
+/**
+ * Every stop's body. Hidden once the finale's Pale Blue Dot shows: from there the whole route
+ * lines up behind the dot, and a comet tail or moon beside it would read as Earth.
+ */
 export function Bodies({ route }: { route: Route }) {
+  const group = useRef<Group>(null);
+  useFrame(() => {
+    if (group.current) group.current.visible = finaleTurn(journeyRuntime.position) <= DOT_FROM_TURN;
+  });
   return (
-    <>
+    <group ref={group} name="bodies">
       {route.bodies.map(({ id, body, radius, position }) => {
         const Body = BODY_COMPONENTS[body];
         return (
@@ -85,6 +97,6 @@ export function Bodies({ route }: { route: Route }) {
           </group>
         );
       })}
-    </>
+    </group>
   );
 }

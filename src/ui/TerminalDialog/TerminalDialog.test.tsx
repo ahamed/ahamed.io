@@ -45,7 +45,14 @@ describe('TerminalDialog', () => {
   });
 
   it('renders verified links only', () => {
-    render(<TerminalDialog stop={earth} open />);
+    const stop = {
+      ...earth,
+      links: [
+        { label: 'GitHub', href: 'https://github.com/ahamed', verified: true },
+        { label: 'LinkedIn', href: 'https://www.linkedin.com/', verified: false },
+      ],
+    };
+    render(<TerminalDialog stop={stop} open />);
     expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
       'href',
       'https://github.com/ahamed',

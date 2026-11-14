@@ -9,6 +9,7 @@ import { CameraRig } from './CameraRig';
 import { Lights } from './Lights';
 import { DeepSky } from './space/DeepSky';
 import { Heliopause } from './space/Heliopause';
+import { PaleBlueDot } from './space/PaleBlueDot';
 import { PostFX } from './space/PostFX';
 import { SpaceEnvironment } from './space/SpaceEnvironment';
 import { SpeedDust } from './space/SpeedDust';
@@ -35,7 +36,9 @@ export default function Voyage() {
     >
       <color attach="background" args={['#000000']} />
       <Lights />
-      <SpaceEnvironment ref={sky} />
+      <SpaceEnvironment ref={sky}>
+        <PaleBlueDot route={ROUTE} />
+      </SpaceEnvironment>
       <group ref={voyager}>
         <Voyager />
       </group>
