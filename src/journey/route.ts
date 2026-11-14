@@ -2,16 +2,41 @@ import type { BodyId, Stop } from '../content/schema';
 
 export type Vec3 = [number, number, number];
 
-/** Exaggerated render radii and real mean distance from the previous stop (km). */
-export const BODY_INFO: Record<BodyId, { radius: number; distanceKm: number }> = {
+interface BodyInfo {
+  /** Exaggerated render radius (world units). */
+  radius: number;
+  /** Representative real distance from the previous stop's body (km); a visual input only. */
+  distanceKm: number;
+  /** The planet a moon belongs to; moons sit on alternating sides behind it. */
+  parent?: BodyId;
+}
+
+/**
+ * Radii are exaggerated, and the small rocks most of all: the chase camera sits about 9 units
+ * behind Voyager, so a rock must be about 1 unit across or more to open its dialog when parked
+ * at its close point. The rocks keep their real order of size.
+ */
+export const BODY_INFO: Record<BodyId, BodyInfo> = {
   earth: { radius: 6, distanceKm: 0 },
   moon: { radius: 1.8, distanceKm: 384_400 },
+  mars: { radius: 3.4, distanceKm: 225_000_000 }, // mean Earth–Mars distance
+  phobos: { radius: 1.1, distanceKm: 9_376, parent: 'mars' }, // orbital radius
+  deimos: { radius: 0.95, distanceKm: 14_084, parent: 'mars' }, // beyond Phobos's orbit
+  ceres: { radius: 1.5, distanceKm: 187_000_000 }, // ≈1.25 AU from Mars
+  vesta: { radius: 1.25, distanceKm: 61_000_000 }, // semi-major axis difference
+  pallas: { radius: 1.2, distanceKm: 61_000_000 },
+  hygiea: { radius: 1.05, distanceKm: 55_000_000 },
 };
 
 /** Progress kept after the last stop so it can be passed. */
 export const END_SLACK = 0.2;
-/** World units per unit of progress (travel is toward -Z). */
-const ROUTE_LENGTH = 1000;
+/** World units of route per gap between stops (travel is toward -Z). */
+const UNITS_PER_STOP = 400;
+/**
+ * Smallest spacing weight between neighbouring stops, so close moons still get their own
+ * dialog and snap point (Earth→Moon is ≈5.95 for comparison).
+ */
+export const MIN_GAP_WEIGHT = 3.5;
 
 export interface RouteBody {
   id: string;
@@ -26,11 +51,19 @@ export interface Route {
   bodies: RouteBody[];
 }
 
-/** Log-compressed spacing: big real gaps grow slowly so the whole voyage stays scrollable. */
-const gapWeight = (km: number): number => Math.log1p(km / 1000);
+/**
+ * Spacing weight before each stop (0 for the first): log-compressed real distance, so big gaps
+ * grow slowly and the whole voyage stays scrollable, floored at MIN_GAP_WEIGHT.
+ */
+export function gapWeights(stops: readonly Stop[]): number[] {
+  return stops.map((s, i) =>
+    i === 0 ? 0 : Math.max(MIN_GAP_WEIGHT, Math.log1p(BODY_INFO[s.body].distanceKm / 1000)),
+  );
+}
 
 export function buildRoute(stops: readonly Stop[]): Route {
-  const weights = stops.map((s, i) => (i === 0 ? 0 : gapWeight(BODY_INFO[s.body].distanceKm)));
+  const length = UNITS_PER_STOP * Math.max(1, stops.length - 1);
+  const weights = gapWeights(stops);
   const total = weights.reduce((a, b) => a + b, 0);
   let cumulative = 0;
   const closePoints = weights.map((w) => {
@@ -38,19 +71,27 @@ export function buildRoute(stops: readonly Stop[]): Route {
     return total === 0 ? 0 : (cumulative / total) * (1 - END_SLACK);
   });
 
+  const moonsSeen = new Map<BodyId, number>();
   const bodies = stops.map((stop, i): RouteBody => {
-    const { radius } = BODY_INFO[stop.body];
+    const { radius, parent } = BODY_INFO[stop.body];
     const cp = closePoints[i] ?? 0;
+    // Planets sit on +X; a planet's moons alternate, starting on the opposite side.
+    let side = 1;
+    if (parent) {
+      const n = moonsSeen.get(parent) ?? 0;
+      moonsSeen.set(parent, n + 1);
+      side = n % 2 === 0 ? -1 : 1;
+    }
     // Beside and slightly ahead of the close point so it fills the chase view there.
     return {
       id: stop.id,
       body: stop.body,
       radius,
-      position: [radius * 2.3, 0, -(cp * ROUTE_LENGTH) - radius * 2],
+      position: [side * radius * 2.3, 0, -(cp * length) - radius * 2],
     };
   });
 
-  return { length: ROUTE_LENGTH, closePoints, bodies };
+  return { length, closePoints, bodies };
 }
 
 /** Voyager's position at progress `p`, written into `out` (no allocation). */

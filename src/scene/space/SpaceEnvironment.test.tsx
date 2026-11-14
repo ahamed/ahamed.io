@@ -5,8 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { stubReducedMotion } from '../../test/reducedMotion';
 import { SpaceEnvironment } from './SpaceEnvironment';
 
-vi.mock('@react-three/drei', () => ({
-  useTexture: Object.assign(() => new Texture(), { clear: () => undefined }),
+vi.mock('../ktx2', () => ({
+  useKtx2: (names: string[]) => names.map(() => new Texture()),
+  clearKtx2: () => undefined,
 }));
 
 afterEach(() => {

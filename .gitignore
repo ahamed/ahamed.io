@@ -19,3 +19,6 @@ blob-report
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# Private profile notes: source for journey.ts, contains topics never published
+/data.md

@@ -24,7 +24,7 @@ TypeScript is pinned to `6.0.3`. Do not upgrade to TS 7 until typescript-eslint'
 | One test by name               | `pnpm vitest run -t "<test name>"`                         |
 | E2E (builds + serves)          | `pnpm e2e`                                                 |
 | One E2E spec                   | `pnpm exec playwright test e2e/<spec>.spec.ts`             |
-| Textures → KTX2                | `pnpm textures` (placeholder until M4)                     |
+| Textures → KTX2                | `pnpm textures` (needs `toktx` only when a source changed) |
 
 **Quality gate before calling anything done:** `pnpm lint && pnpm typecheck && pnpm test`, plus `pnpm e2e` for any UI flow. CI (`.github/workflows/ci.yml`) runs the same commands plus `pnpm build` on pushes to `main` and on pull requests. The pre-commit hook (husky + lint-staged) lints and formats only staged files. Typecheck and tests run in CI, not in the hook.
 

@@ -7,5 +7,6 @@ export function listUnverified(stops: readonly Stop[]): string[] {
   return stops.flatMap((stop) => [
     ...stop.links.filter((l) => !l.verified).map((l) => `${stop.id}.links.${slug(l.label)}`),
     ...stop.timeline.filter((t) => !t.verified).map((t) => `${stop.id}.timeline.${t.id}`),
+    ...(stop.unverified ?? []).map((claim) => `${stop.id}.text.${claim}`),
   ]);
 }

@@ -3,7 +3,7 @@ import { STOPS } from '../content/journey';
 import { chasePoseInto, type ChasePose } from './camera';
 import { buildRoute } from './route';
 import { stopSizesInto } from './sizes';
-import { chooseOpenStop, dialogScale } from './visibility';
+import { chooseOpenStop, dialogScale, OPEN_SIZE } from './visibility';
 
 const route = buildRoute(STOPS);
 const fov = (50 * Math.PI) / 180;
@@ -30,6 +30,18 @@ function fly(from: number, to: number, start: number | null) {
 const collapse = (xs: (string | null)[]) => xs.filter((x, i) => i === 0 || x !== xs[i - 1]);
 
 describe('dialog sequence along the route', () => {
+  // PageDown and the idle snap park the camera exactly on a close point, so each stop must
+  // open there by itself, with some room above the threshold, not only while flying past.
+  it.each(route.bodies.map((body, i) => [body.id, i] as const))(
+    'opens %s on its own when parked at its close point',
+    (_, i) => {
+      chasePoseInto(pose, route, route.closePoints[i] ?? 0);
+      stopSizesInto(sizes, route, pose.position, fov);
+      expect(sizes[i]).toBeGreaterThanOrEqual(OPEN_SIZE * 1.25);
+      expect(chooseOpenStop(sizes, null)).toBe(i);
+    },
+  );
+
   it('opens Earth at the start', () => {
     expect(fly(0, 0, null).last).toBe(0);
   });
@@ -41,9 +53,18 @@ describe('dialog sequence along the route', () => {
     expect(earthScales.at(-1)).toBeLessThan(earthScales[0] ?? 0);
   });
 
-  it('reopens Earth when travelling back', () => {
-    const forward = fly(0, 0.8, null);
-    const back = fly(0.8, 0, forward.last);
+  it('reopens Earth when travelling back from the Moon', () => {
+    const moon = route.closePoints[1] ?? 0.8;
+    const forward = fly(0, moon, null);
+    const back = fly(moon, 0, forward.last);
     expect(collapse(back.opened)).toEqual(['moon', null, 'earth']);
+  });
+
+  it('opens every stop on its own, in order, closing each before the next', () => {
+    const { opened } = fly(0, 1, null);
+    const sequence = collapse(opened);
+    if (sequence.at(-1) === null) sequence.pop(); // the last dialog may close in the end slack
+    const expected = route.bodies.flatMap((b, i) => (i === 0 ? [b.id] : [null, b.id]));
+    expect(sequence).toEqual(expected);
   });
 });

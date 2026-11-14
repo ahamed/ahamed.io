@@ -2,24 +2,20 @@ import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { BackSide, Mesh, MeshBasicMaterial, Quaternion, SRGBColorSpace, Texture } from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { skyQuaternion } from './orientation';
-import { MILKY_WAY_URL, Sky } from './Sky';
+import { MILKY_WAY, Sky } from './Sky';
 
 const texture = new Texture();
+texture.colorSpace = SRGBColorSpace; // KTX2 files encoded with an sRGB transfer load this way
 const clear = vi.fn();
 
-vi.mock('@react-three/drei', () => ({
-  useTexture: Object.assign(
-    (url: string, onLoad?: (t: Texture) => void) => {
-      if (url !== MILKY_WAY_URL) throw new Error(`unexpected texture ${url}`);
-      onLoad?.(texture);
-      return texture;
-    },
-    {
-      clear: (url: string) => {
-        clear(url);
-      },
-    },
-  ),
+vi.mock('../ktx2', () => ({
+  useKtx2: (names: string[]) => {
+    if (names.join() !== MILKY_WAY) throw new Error(`unexpected textures ${names.join()}`);
+    return [texture];
+  },
+  clearKtx2: (names: string[]) => {
+    clear(names);
+  },
 }));
 
 afterEach(() => {
@@ -59,6 +55,6 @@ describe('Sky', () => {
     const { renderer } = await renderSky();
     await renderer.unmount();
     expect(dispose).toHaveBeenCalled();
-    expect(clear).toHaveBeenCalledWith(MILKY_WAY_URL);
+    expect(clear).toHaveBeenCalledWith([MILKY_WAY]);
   });
 });

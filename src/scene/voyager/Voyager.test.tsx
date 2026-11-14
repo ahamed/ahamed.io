@@ -43,6 +43,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+vi.mock('../ktx2', () => import('../../test/ktx2'));
+
 describe('Voyager', () => {
   it('is built from the full museum-grade part list', () => {
     const ids = PARTS.map((p) => p.id);

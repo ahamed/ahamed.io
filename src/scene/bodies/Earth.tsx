@@ -1,22 +1,15 @@
-import { useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
-import { AdditiveBlending, BackSide, Color, SRGBColorSpace, type Mesh } from 'three';
+import { AdditiveBlending, BackSide, Color, type Mesh } from 'three';
+import { useKtx2 } from '../ktx2';
 import { atmosphereFragment, atmosphereVertex } from '../shaders/atmosphere';
 
 const CLOUD_SPIN = 0.01;
 const EARTH_SPIN = 0.004;
 
 export function Earth({ radius }: { radius: number }) {
-  const [day, clouds] = useTexture(
-    ['/textures/2k_earth_daymap.jpg', '/textures/2k_earth_clouds.jpg'],
-    ([dayMap]) => {
-      if (dayMap) {
-        dayMap.colorSpace = SRGBColorSpace;
-        dayMap.anisotropy = 8;
-      }
-    },
-  );
+  // The day map is sRGB-encoded; the cloud map is a linear mask.
+  const [day, clouds] = useKtx2(['2k_earth_daymap', '2k_earth_clouds']);
 
   const surface = useRef<Mesh>(null);
   const cloudLayer = useRef<Mesh>(null);

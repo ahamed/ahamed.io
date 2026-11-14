@@ -1,10 +1,11 @@
-import { useTexture } from '@react-three/drei';
 import { useEffect } from 'react';
-import { BackSide, Quaternion, SRGBColorSpace } from 'three';
+import { BackSide, Quaternion } from 'three';
+import { clearKtx2, useKtx2 } from '../ktx2';
 import { SKY_ORDER, SKY_RADIUS } from './layout';
 import { skyQuaternion } from './orientation';
 
-export const MILKY_WAY_URL = '/textures/2k_stars_milky_way.jpg';
+/** KTX2 texture name (sRGB) of the Solar System Scope Milky Way map. */
+export const MILKY_WAY = '2k_stars_milky_way';
 
 const ROTATION = new Quaternion(...skyQuaternion());
 /**
@@ -15,15 +16,12 @@ const GAIN = 1.6;
 
 /** The Milky Way on the inside of a camera-following sphere, aimed along Voyager's heading. */
 export function Sky() {
-  const texture = useTexture(MILKY_WAY_URL, (t) => {
-    t.colorSpace = SRGBColorSpace;
-    t.anisotropy = 4;
-  });
+  const [texture] = useKtx2([MILKY_WAY]);
 
   useEffect(
     () => () => {
-      useTexture.clear(MILKY_WAY_URL);
-      texture.dispose();
+      clearKtx2([MILKY_WAY]);
+      texture?.dispose();
     },
     [texture],
   );

@@ -2,6 +2,8 @@ import { Canvas } from '@react-three/fiber';
 import { useRef } from 'react';
 import { ACESFilmicToneMapping, SRGBColorSpace, type Group } from 'three';
 import { journeyStore, ROUTE } from '../store/journey';
+import { AsteroidBelt } from './bodies/AsteroidBelt';
+import { beltSpan, type BeltOptions } from './bodies/belt';
 import { Bodies } from './bodies/Bodies';
 import { CameraRig } from './CameraRig';
 import { Lights } from './Lights';
@@ -9,6 +11,15 @@ import { PostFX } from './space/PostFX';
 import { SpaceEnvironment } from './space/SpaceEnvironment';
 import { SpeedDust } from './space/SpeedDust';
 import { Voyager } from './voyager/Voyager';
+
+const BELT: BeltOptions = {
+  count: 2500,
+  seed: 1801,
+  ...beltSpan(ROUTE),
+  corridor: 16,
+  outer: 140,
+  thickness: 30,
+};
 
 /** The 3D voyage. Default export so it can be code-split with React.lazy. */
 export default function Voyage() {
@@ -33,6 +44,7 @@ export default function Voyage() {
         <Voyager />
       </group>
       <Bodies route={ROUTE} />
+      <AsteroidBelt options={BELT} />
       <SpeedDust />
       <CameraRig route={ROUTE} store={journeyStore} voyager={voyager} sky={sky} />
       <PostFX />

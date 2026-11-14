@@ -2,11 +2,28 @@ import { Suspense } from 'react';
 import type { BodyId } from '../../content/schema';
 import type { Route } from '../../journey/route';
 import { Earth } from './Earth';
+import { Mars } from './Mars';
 import { Moon } from './Moon';
+import { Rock } from './Rock';
+import type { RockPresetId } from './rockShape';
 
-const BODY_COMPONENTS: Record<BodyId, (props: { radius: number }) => React.JSX.Element> = {
+type BodyComponent = (props: { radius: number }) => React.JSX.Element;
+
+/** Small moons and hero asteroids are seeded rocks, one shape preset each. */
+const rock =
+  (preset: RockPresetId): BodyComponent =>
+  ({ radius }) => <Rock preset={preset} radius={radius} />;
+
+const BODY_COMPONENTS: Record<BodyId, BodyComponent> = {
   earth: Earth,
   moon: Moon,
+  mars: Mars,
+  phobos: rock('phobos'),
+  deimos: rock('deimos'),
+  ceres: rock('ceres'),
+  vesta: rock('vesta'),
+  pallas: rock('pallas'),
+  hygiea: rock('hygiea'),
 };
 
 /** Untextured stand-in while a body's maps load. */

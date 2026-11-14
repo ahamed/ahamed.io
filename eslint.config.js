@@ -16,6 +16,8 @@ export default defineConfig([
     'blob-report',
     'openspec',
     '.claude',
+    // Vendored Basis Universal transcoder, copied from three.
+    'public/basis',
   ]),
   {
     files: ['**/*.{ts,tsx,js,mjs}'],

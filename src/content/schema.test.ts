@@ -39,4 +39,26 @@ describe('validateStops', () => {
     const result = validateStops([{ ...validStop, links: [link as Stop['links'][number]] }]);
     expect(result.success).toBe(false);
   });
+
+  it('accepts every inner-system body', () => {
+    const bodies = ['mars', 'phobos', 'deimos', 'ceres', 'vesta', 'pallas', 'hygiea'] as const;
+    const stops = bodies.map((body) => ({ ...validStop, id: body, body }));
+    expect(validateStops(stops).success).toBe(true);
+  });
+
+  it('accepts tech chips and unverified claim ids, both optional', () => {
+    const result = validateStops([{ ...validStop, tech: ['PHP', 'React'], unverified: ['role'] }]);
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an empty tech label and names the stop', () => {
+    const result = validateStops([{ ...validStop, tech: ['PHP', ''] }]);
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain('earth');
+  });
+
+  it('rejects an empty unverified claim id', () => {
+    const result = validateStops([{ ...validStop, unverified: [''] }]);
+    expect(result.success).toBe(false);
+  });
 });

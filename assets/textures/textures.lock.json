@@ -1,0 +1,22 @@
+{
+  "2k_earth_daymap": {
+    "source": "767ee1dc6eb3802699bfccf6f264880f8acd0b80de3191cd24984fe279b07b7c",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "2k_earth_clouds": {
+    "source": "fffd7f68d41b37274822150e54a6ef605af1d3ec35624d9f628c3b896bfa42ed",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf linear"
+  },
+  "2k_moon": {
+    "source": "2764ba6535ea0481a062846ee033cc7a909dae05b31a8fd13f3e98f3a7fd92bd",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "2k_stars_milky_way": {
+    "source": "ec2240e6f3784d962ab81609b228bfd470e87c86d1fed5e99134d4cd3de24239",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  },
+  "2k_mars": {
+    "source": "2d187f3e77a98eaa8cea5f4cc722f633c122ef170b9e94ace6b5fb6cbc3f8e01",
+    "options": "--t2 --encode etc1s --clevel 4 --qlevel 192 --genmipmap --assign_oetf srgb"
+  }
+}

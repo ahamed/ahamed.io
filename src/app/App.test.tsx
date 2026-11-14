@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { STOPS } from '../content/journey';
 
 const webgl = vi.hoisted(() => ({ supported: false }));
 vi.mock('../scene/webgl', () => ({ canUseWebGL: () => webgl.supported }));
@@ -36,7 +37,7 @@ describe('App shell', () => {
     webgl.supported = true;
     render(<App />);
     expect(await screen.findByTestId('voyage')).toBeInTheDocument();
-    expect(document.querySelectorAll('[data-stop]')).toHaveLength(2);
+    expect(document.querySelectorAll('[data-stop]')).toHaveLength(STOPS.length);
   });
 
   it('shows the dev-only inspector instead of the voyage with ?inspect', async () => {

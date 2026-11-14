@@ -1,10 +1,7 @@
-import { useTexture } from '@react-three/drei';
-import { SRGBColorSpace } from 'three';
+import { useKtx2 } from '../ktx2';
 
 export function Moon({ radius }: { radius: number }) {
-  const map = useTexture('/textures/2k_moon.jpg', (texture) => {
-    texture.colorSpace = SRGBColorSpace;
-  });
+  const [map] = useKtx2(['2k_moon']);
   return (
     <mesh rotation={[0, Math.PI, 0]}>
       <sphereGeometry args={[radius, 96, 48]} />

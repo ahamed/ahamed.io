@@ -20,7 +20,17 @@ const timelineEntrySchema = z.object({
   verified: z.boolean(),
 });
 
-export const bodySchema = z.enum(['earth', 'moon']);
+export const bodySchema = z.enum([
+  'earth',
+  'moon',
+  'mars',
+  'phobos',
+  'deimos',
+  'ceres',
+  'vesta',
+  'pallas',
+  'hygiea',
+]);
 
 export const stopSchema = z.object({
   id: z.string().min(1),
@@ -31,6 +41,10 @@ export const stopSchema = z.object({
   }),
   timeline: z.array(timelineEntrySchema),
   links: z.array(linkSchema),
+  /** Short tech labels shown as chips under the card text. */
+  tech: z.array(z.string().min(1)).optional(),
+  /** Ids of claims in `text` not yet confirmed by the owner (each also marked // VERIFY). */
+  unverified: z.array(z.string().min(1)).optional(),
 });
 
 export type Stop = z.infer<typeof stopSchema>;

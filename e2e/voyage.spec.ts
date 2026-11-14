@@ -31,7 +31,17 @@ test.describe('voyage', () => {
   test('arrow steps move forward and close Earth without skipping to the Moon', async ({
     page,
   }) => {
-    for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowDown');
+    // 13 steps (each 4% of the mean gap) reach p ≈ 0.052: past where Earth closes (≈ 0.049) and
+    // short of the Moon's snap reach (≈ 0.054). Send them as one quick burst, as held or fast
+    // keys arrive. One by one, a slow software-rendered frame between presses lets the idle snap
+    // pull the target back to Earth.
+    await page.evaluate(() => {
+      for (let i = 0; i < 13; i++) {
+        document.body.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
+        );
+      }
+    });
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'closed', OPEN_TIMEOUT);
     await expect(dialog(page, 'moon')).toHaveAttribute('data-state', 'closed');
   });
@@ -41,6 +51,35 @@ test.describe('voyage', () => {
     for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 200);
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'closed', OPEN_TIMEOUT);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  });
+
+  test('PageDown visits all nine stops in order, one dialog at a time', async ({ page }) => {
+    // Eight flights under headless software WebGL take longer than the default 30 s budget.
+    test.setTimeout(120_000);
+    const order = [
+      'earth',
+      'moon',
+      'mars',
+      'phobos',
+      'deimos',
+      'ceres',
+      'vesta',
+      'pallas',
+      'hygiea',
+    ];
+    for (const [i, stop] of order.entries()) {
+      if (i > 0) await page.keyboard.press('PageDown');
+      await expect(dialog(page, stop)).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
+      await expect(page.locator('[data-stop][data-state="open"]')).toHaveCount(1);
+    }
+  });
+
+  test('project cards show their tech chips', async ({ page }) => {
+    for (let i = 0; i < 3; i++) await page.keyboard.press('PageDown');
+    const phobos = dialog(page, 'phobos');
+    await expect(phobos).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
+    const chips = phobos.getByRole('list', { name: 'Tech' }).getByRole('listitem');
+    await expect(chips).toHaveText(['PHP', 'WordPress', 'REST API', 'Stripe', 'PHPUnit']);
   });
 
   test('End passes everything and Home returns to Earth', async ({ page }) => {
@@ -81,18 +120,27 @@ test.describe('voyage assets', () => {
     });
     page.on('pageerror', (error) => errors.push(error.message));
 
+    // The Basis transcoder is fetched once the first KTX2 file arrives, so wait for it explicitly.
+    const transcoder = page.waitForResponse((response) =>
+      response.url().endsWith('/basis/basis_transcoder.wasm'),
+    );
     await page.goto('/');
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
+    await transcoder;
     await page.waitForLoadState('networkidle');
 
     expect(requests.filter((path) => /\.(hdr|exr)$/i.test(path))).toEqual([]);
     const images = requests.filter((path) => /\.(jpe?g|png|webp|avif|ktx2)$/i.test(path));
     expect(images.sort()).toEqual([
-      '/textures/2k_earth_clouds.jpg',
-      '/textures/2k_earth_daymap.jpg',
-      '/textures/2k_moon.jpg',
-      '/textures/2k_stars_milky_way.jpg',
+      '/textures/2k_earth_clouds.ktx2',
+      '/textures/2k_earth_daymap.ktx2',
+      '/textures/2k_mars.ktx2',
+      '/textures/2k_moon.ktx2',
+      '/textures/2k_stars_milky_way.ktx2',
     ]);
+    expect(requests).toEqual(
+      expect.arrayContaining(['/basis/basis_transcoder.js', '/basis/basis_transcoder.wasm']),
+    );
     expect(errors).toEqual([]);
   });
 });

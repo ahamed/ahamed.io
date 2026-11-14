@@ -66,4 +66,41 @@ describe('TerminalDialog', () => {
     unmount();
     expect(dialogElements.has('earth')).toBe(false);
   });
+
+  describe('tech chips', () => {
+    const phobos = STOPS.find((s) => s.id === 'phobos');
+    if (!phobos?.tech) throw new Error('phobos card with tech missing');
+    const tech = phobos.tech;
+
+    it('lists the card tech as a "Tech" list, in order', () => {
+      render(<TerminalDialog stop={phobos} open />);
+      const list = screen.getByRole('list', { name: 'Tech' });
+      expect(Array.from(list.querySelectorAll('li')).map((li) => li.textContent)).toEqual(tech);
+    });
+
+    it('shows no chip list on cards without tech', () => {
+      render(<TerminalDialog stop={earth} open />);
+      expect(screen.queryByRole('list', { name: 'Tech' })).toBeNull();
+    });
+
+    it('reveals the chips once the typewriter has finished', () => {
+      render(<TerminalDialog stop={phobos} open />);
+      const list = screen.getByRole('list', { name: 'Tech' });
+      expect(list).not.toHaveAttribute('data-revealed');
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
+      expect(list).toHaveAttribute('data-revealed');
+    });
+
+    it('shows the chips at once under reduced motion', () => {
+      vi.stubGlobal(
+        'matchMedia',
+        vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+      );
+      render(<TerminalDialog stop={phobos} open />);
+      expect(screen.getByRole('list', { name: 'Tech' })).toHaveAttribute('data-revealed');
+      vi.unstubAllGlobals();
+    });
+  });
 });

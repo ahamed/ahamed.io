@@ -12,17 +12,46 @@ interface Props {
 const yearRange = (start: number, end: number | 'present'): string =>
   end === start ? String(start) : `${String(start)}–${end === 'present' ? 'present' : String(end)}`;
 
-/** Visible typewriter copy; remounts (restarts) every time the dialog opens. */
-function TypedText({ text }: { text: string }) {
-  const shown = useTypewriter(text);
+/** Card text plus tech chips. The full text is always in the accessibility tree. */
+function CardBody({
+  text,
+  tech,
+  typed,
+}: {
+  text: string;
+  tech: readonly string[];
+  typed?: number;
+}) {
+  const done = typed === undefined || typed >= text.length;
   return (
     <>
-      <span aria-hidden="true" data-typewriter="">
-        {text.slice(0, shown)}
-      </span>
-      {shown < text.length && <span aria-hidden="true" className={styles.caret} />}
+      <p className={styles.text}>
+        <span className="visually-hidden">{text}</span>
+        {typed !== undefined && (
+          <span aria-hidden="true" data-typewriter="">
+            {text.slice(0, typed)}
+          </span>
+        )}
+        {!done && <span aria-hidden="true" className={styles.caret} />}
+      </p>
+      {tech.length > 0 && (
+        <ul
+          aria-label="Tech"
+          className={styles.tech}
+          data-revealed={done && typed !== undefined ? '' : undefined}
+        >
+          {tech.map((label) => (
+            <li key={label}>{label}</li>
+          ))}
+        </ul>
+      )}
     </>
   );
+}
+
+/** Typewriter body; remounts (restarts) every time the dialog opens. Chips follow the text. */
+function TypedBody({ text, tech }: { text: string; tech: readonly string[] }) {
+  return <CardBody text={text} tech={tech} typed={useTypewriter(text)} />;
 }
 
 /** Terminal-style card for one stop. Positioned per frame via CSS vars by the scene. */
@@ -53,10 +82,11 @@ export function TerminalDialog({ stop, open }: Props) {
         </span>
         {stop.title}
       </h2>
-      <p className={styles.text}>
-        <span className="visually-hidden">{stop.text}</span>
-        {open && <TypedText text={stop.text} />}
-      </p>
+      {open ? (
+        <TypedBody text={stop.text} tech={stop.tech ?? []} />
+      ) : (
+        <CardBody text={stop.text} tech={stop.tech ?? []} />
+      )}
       {stop.timeline.length > 0 && (
         <ol className={styles.timeline}>
           {stop.timeline.map((entry) => (

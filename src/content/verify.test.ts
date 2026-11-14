@@ -9,6 +9,11 @@ describe('listUnverified', () => {
       'earth.links.linkedin',
       'moon.timeline.corner-case',
       'moon.timeline.ollyo',
+      'phobos.text.release-date',
+      'deimos.text.role',
+      'vesta.text.role',
+      'pallas.text.leadership',
+      'hygiea.text.leadership',
     ]);
   });
 
@@ -25,5 +30,21 @@ describe('listUnverified', () => {
         },
       ]),
     ).toEqual([]);
+  });
+
+  it('lists unconfirmed claims in the card text as <stop>.text.<id>', () => {
+    expect(
+      listUnverified([
+        {
+          id: 'x',
+          body: 'mars',
+          title: 't',
+          text: 'text',
+          timeline: [],
+          links: [],
+          unverified: ['role', 'release-date'],
+        },
+      ]),
+    ).toEqual(['x.text.role', 'x.text.release-date']);
   });
 });
