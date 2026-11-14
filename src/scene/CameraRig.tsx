@@ -10,6 +10,7 @@ import {
   finaleTurn,
 } from '../journey/finale';
 import { flyBackDone, flyBackTarget } from '../journey/flyBack';
+import { introPoseInto, introProgress, introStartPose } from '../journey/intro';
 import { damp } from '../journey/progress';
 import {
   easeOffset,
@@ -25,8 +26,11 @@ import { SNAP_IDLE_MS, snapTarget } from '../journey/snap';
 import { stopRanges } from '../journey/stops';
 import { chooseOpenStop, dialogOpacity, dialogScale } from '../journey/visibility';
 import { journeyRuntime, type JourneyStore } from '../store/journey';
+import { plasmaLink } from '../audio/plasmaLink';
+import { plasmaGain, type PlasmaLayout } from '../audio/plasma';
 import { finaleLayer } from '../ui/Finale/registry';
 import { dialogElements, dialogSizes } from '../ui/TerminalDialog/registry';
+import { heliopauseLayout } from './space/heliosphere';
 import { useReducedMotion } from './useReducedMotion';
 
 const DAMPING = 6;
@@ -99,14 +103,25 @@ export function CameraRig({ route, store, voyager, sky }: Props) {
     // The finale: orbit to Voyager's front and look back at Earth, after the body aim.
     pointAt(route, p, scratch.ship);
     finalePoseInto(scratch.pose, scratch.ship, finaleTurn(p), scratch.earth);
+    // Boot holds the wide establishing view; the intro sweeps from it into the chase view.
+    const { phase, introStartAt } = store.getState();
+    if (phase === 'boot') {
+      introPoseInto(scratch.pose, scratch.intro, 0);
+    } else if (phase === 'intro') {
+      const t = introProgress(now - introStartAt);
+      introPoseInto(scratch.pose, scratch.intro, t);
+      if (t >= 1) state.endIntro();
+    }
     camera.position.set(...scratch.pose.position);
     camera.lookAt(...scratch.pose.lookAt);
     sky?.current?.position.copy(camera.position);
     if (voyager.current) voyager.current.position.set(...scratch.ship);
+    plasmaLink.set(plasmaGain(scratch.ship[2], scratch.plasma));
     writeFinale(scratch, p, camera, size, state);
 
     const currentIndex = scratch.openIndex;
-    const openIndex = chooseOpenStop(scratch.sizes, currentIndex);
+    // Dialogs open only once the voyage has begun and the intro has landed.
+    const openIndex = phase === 'voyage' ? chooseOpenStop(scratch.sizes, currentIndex) : null;
     scratch.openIndex = openIndex;
     const openBody = openIndex === null ? undefined : route.bodies[openIndex];
     if (openIndex !== currentIndex) state.setOpenStop(openBody?.id ?? null);
@@ -203,6 +218,10 @@ function writeFinale(
 }
 
 interface Scratch {
+  /** Where the plasma texture swells along the route. */
+  plasma: PlasmaLayout;
+  /** The wide view the intro sweep starts from. */
+  intro: ChasePose;
   /** Earth's position: where the Pale Blue Dot is, seen from the finale. */
   earth: Vec3;
   finaleLast: number[];
@@ -235,6 +254,12 @@ function createScratch(route: Route): Scratch {
   const earth = route.bodies.find((b) => b.body === 'earth')?.position ?? [0, 0, 0];
   return {
     earth: [...earth],
+    intro: introStartPose(earth),
+    plasma: {
+      zEris: route.bodies.find((b) => b.body === 'eris')?.position[2] ?? 0,
+      zCross: heliopauseLayout(route).zCross,
+      zEnd: -route.length,
+    },
     finaleLast: [NaN, NaN, NaN],
     ranges: stopRanges(route.closePoints),
     pose: { position: [0, 0, 0], lookAt: [0, 0, 0] },

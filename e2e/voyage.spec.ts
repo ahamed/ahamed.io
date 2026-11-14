@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { begin } from './begin.js';
 
 const dialog = (page: Page, stop: string) => page.locator(`[data-stop="${stop}"]`);
 const OPEN_TIMEOUT = { timeout: 15_000 };
@@ -75,6 +76,7 @@ async function expectClearOfVoyager(page: Page, stop: string) {
 test.describe('voyage', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    await begin(page);
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
   });
 
@@ -225,6 +227,7 @@ test.describe('voyage on a phone', () => {
 
   test('shows the dialog as a full-width bottom sheet', async ({ page }) => {
     await page.goto('/');
+    await begin(page);
     const earth = dialog(page, 'earth');
     await expect(earth).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
     const box = await earth.boundingBox();
@@ -238,6 +241,7 @@ test.describe('voyage on a phone', () => {
 
   test('fits the contact card inside the screen at the end', async ({ page }) => {
     await page.goto('/');
+    await begin(page);
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
     await page.keyboard.press('End');
     const card = page.getByRole('region', { name: 'Open a channel' });
@@ -272,6 +276,7 @@ test.describe('voyage assets', () => {
       response.url().endsWith('/basis/basis_transcoder.wasm'),
     );
     await page.goto('/');
+    await begin(page);
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
     await transcoder;
     await page.waitForLoadState('networkidle');
@@ -320,6 +325,8 @@ test.describe('reduced motion', () => {
     page.on('pageerror', (error) => errors.push(error.message));
 
     await page.goto('/');
+
+    await begin(page);
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
     await page.keyboard.press('PageDown');
     await expect(dialog(page, 'moon')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);

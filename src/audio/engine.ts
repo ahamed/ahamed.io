@@ -1,56 +1,87 @@
 import { blipParams, playBlip } from './blip';
+import { droneParams } from './drone';
+import { buildDrone, buildPlasma } from './graph';
+import { plasmaParams } from './plasma';
 
-const UNLOCK_EVENTS = ['keydown', 'pointerdown', 'touchstart'] as const;
+/** Time constant (s) of the mute ramp: about 0.15 s to silence, with no click. */
+const MUTE_TAU = 0.05;
+/** Time constant (s) of plasma level changes. */
+const PLASMA_TAU = 0.2;
+/** Smallest plasma level change worth scheduling. */
+const PLASMA_STEP = 0.005;
 
 export interface AudioEngine {
-  isUnlocked: () => boolean;
-  /** Plays the blip if audio is unlocked; returns whether it played. Never queues. */
+  isStarted: () => boolean;
+  /** Creates and resumes the AudioContext and starts the drone and plasma. Call from a gesture. */
+  start: () => void;
+  /** Plays the blip if started and not muted; returns whether it played. Never queues. */
   blip: () => boolean;
-  onUnlock: (listener: () => void) => () => void;
+  setMuted: (muted: boolean) => void;
+  /** The plasma texture's level, 0..1 (see plasmaGain). */
+  setPlasma: (level: number) => void;
+  onStart: (listener: () => void) => () => void;
   dispose: () => void;
 }
 
 interface Options {
   createContext?: () => AudioContext;
-  target?: EventTarget;
 }
 
-/** Holds a lazily created AudioContext that is unlocked by the first user gesture. */
+/** The voyage's sound: a master gain (mute) over the drone, the plasma texture and the blip. */
 export function createAudioEngine({
   createContext = () => new AudioContext(),
-  target = window,
 }: Options = {}): AudioEngine {
   let ctx: AudioContext | null = null;
+  let master: GainNode | null = null;
+  let plasma: GainNode | null = null;
+  let muted = false;
+  let plasmaLevel = 0;
+  let scheduledPlasma = -1;
   const listeners = new Set<() => void>();
-  const params = blipParams();
+  const blip = blipParams();
+  const plasmaSettings = plasmaParams();
 
-  const unlock = () => {
-    removeListeners();
-    ctx ??= createContext();
-    void ctx.resume();
-    for (const listener of listeners) listener();
+  const applyPlasma = () => {
+    if (!ctx || !plasma || Math.abs(plasmaLevel - scheduledPlasma) < PLASMA_STEP) return;
+    scheduledPlasma = plasmaLevel;
+    plasma.gain.setTargetAtTime(plasmaLevel * plasmaSettings.level, ctx.currentTime, PLASMA_TAU);
   };
-
-  const removeListeners = () => {
-    for (const type of UNLOCK_EVENTS) target.removeEventListener(type, unlock, true);
-  };
-
-  for (const type of UNLOCK_EVENTS) target.addEventListener(type, unlock, true);
 
   return {
-    isUnlocked: () => ctx !== null,
+    isStarted: () => ctx !== null,
+    start: () => {
+      if (ctx) return;
+      ctx = createContext();
+      void ctx.resume();
+      master = ctx.createGain();
+      master.gain.setValueAtTime(muted ? 0 : 1, ctx.currentTime);
+      master.connect(ctx.destination);
+      buildDrone(ctx, master, droneParams());
+      plasma = buildPlasma(ctx, master, plasmaSettings).gain;
+      applyPlasma();
+      for (const listener of listeners) listener();
+    },
     blip: () => {
-      if (!ctx) return false;
-      playBlip(ctx, params);
+      if (!ctx || !master || muted) return false;
+      playBlip(ctx, blip, master);
       return true;
     },
-    onUnlock: (listener) => {
+    setMuted: (value) => {
+      muted = value;
+      if (ctx && master) master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, MUTE_TAU);
+    },
+    setPlasma: (level) => {
+      plasmaLevel = level;
+      applyPlasma();
+    },
+    onStart: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
     dispose: () => {
-      removeListeners();
       listeners.clear();
+      void ctx?.close();
+      ctx = null;
     },
   };
 }

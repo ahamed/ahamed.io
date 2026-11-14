@@ -31,6 +31,7 @@ describe('App shell', () => {
     render(<App />);
     expect(screen.getByText(/3D view not supported/i)).toBeInTheDocument();
     expect(screen.queryByTestId('voyage')).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Mission boot' })).toBeNull();
   });
 
   it('mounts the voyage and one dialog per stop when WebGL is available', async () => {
@@ -38,6 +39,7 @@ describe('App shell', () => {
     render(<App />);
     expect(await screen.findByTestId('voyage')).toBeInTheDocument();
     expect(document.querySelectorAll('[data-stop]')).toHaveLength(STOPS.length);
+    expect(screen.getByRole('dialog', { name: 'Mission boot' })).toBeInTheDocument();
   });
 
   it('shows the dev-only inspector instead of the voyage with ?inspect', async () => {

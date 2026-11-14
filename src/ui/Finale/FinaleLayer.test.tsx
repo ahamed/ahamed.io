@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 function renderLayer(finale: Finale = FINALE) {
-  const store = createJourneyStore([0, 0.8]);
+  const store = createJourneyStore([0, 0.8], { phase: 'voyage' });
   render(<FinaleLayer finale={finale} store={store} />);
   const show = (shown: boolean) => {
     act(() => {

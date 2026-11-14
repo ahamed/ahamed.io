@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { STOPS } from '../content/journey';
 import { buildRoute } from '../journey/route';
 import { createJourneyStore, journeyRuntime } from '../store/journey';
+import { plasmaLink } from '../audio/plasmaLink';
 import { finaleLayer } from '../ui/Finale/registry';
 import { dialogElements, dialogSizes } from '../ui/TerminalDialog/registry';
 import { CameraRig } from './CameraRig';
@@ -23,7 +24,7 @@ function CaptureCamera({ onCamera }: { onCamera: (camera: Camera) => void }) {
 }
 
 async function renderRig() {
-  const store = createJourneyStore(route.closePoints);
+  const store = createJourneyStore(route.closePoints, { phase: 'voyage' });
   const renderer = await ReactThreeTestRenderer.create(
     <CameraRig route={route} store={store} voyager={{ current: null }} />,
   );
@@ -68,7 +69,7 @@ describe('CameraRig travel speed', () => {
 
 describe('CameraRig sky follow', () => {
   it('keeps the sky group on the camera at every progress, so the sky shows no parallax', async () => {
-    const store = createJourneyStore(route.closePoints);
+    const store = createJourneyStore(route.closePoints, { phase: 'voyage' });
     const sky = createRef<Group>();
     const cameraRef: { current: Camera | null } = { current: null };
     const renderer = await ReactThreeTestRenderer.create(
@@ -133,7 +134,7 @@ describe('CameraRig dialog placement', () => {
     const element = document.createElement('section');
     dialogElements.set('earth', element);
     dialogSizes.set('earth', DIALOG);
-    const store = createJourneyStore(route.closePoints);
+    const store = createJourneyStore(route.closePoints, { phase: 'voyage' });
     const voyager = createRef<Group>();
     const size = { width: 0, height: 0 };
     function CaptureSize() {
@@ -204,7 +205,7 @@ describe('CameraRig dialog placement beside a giant', () => {
       dialogElements.set(id, element);
       dialogSizes.set(id, DIALOG);
       journeyRuntime.position = cp;
-      const store = createJourneyStore(route.closePoints);
+      const store = createJourneyStore(route.closePoints, { phase: 'voyage' });
       store.getState().snapTo(cp);
       const state = { camera: null as Camera | null, width: 0, height: 0 };
       function Capture() {
@@ -252,7 +253,7 @@ describe('CameraRig finale', () => {
   const heliopause = route.closePoints.at(-1) ?? 0.8;
 
   async function settle(target: number) {
-    const store = createJourneyStore(route.closePoints);
+    const store = createJourneyStore(route.closePoints, { phase: 'voyage' });
     const cameraRef: { current: Camera | null } = { current: null };
     const renderer = await ReactThreeTestRenderer.create(
       <>
@@ -319,6 +320,80 @@ describe('CameraRig finale', () => {
     await frames(1);
     expect(store.getState().target).toBe(0);
     expect(store.getState().flight).toBeNull();
+    await renderer.unmount();
+  });
+});
+
+describe('CameraRig boot and intro', () => {
+  const earth = route.bodies[0]?.position ?? [0, 0, 0];
+
+  async function rig(phase: 'boot' | 'intro') {
+    const store = createJourneyStore(route.closePoints, { phase, storage: null });
+    const cameraRef: { current: Camera | null } = { current: null };
+    const renderer = await ReactThreeTestRenderer.create(
+      <>
+        <CaptureCamera
+          onCamera={(c) => {
+            cameraRef.current = c;
+          }}
+        />
+        <CameraRig route={route} store={store} voyager={{ current: null }} />
+      </>,
+    );
+    const frames = async (count: number) => {
+      await ReactThreeTestRenderer.act(async () => {
+        await renderer.advanceFrames(count, 1 / 30);
+      });
+    };
+    await frames(3);
+    if (!cameraRef.current) throw new Error('no camera');
+    return { renderer, store, camera: cameraRef.current, frames };
+  }
+
+  it('holds the wide intro view while booting and opens no dialog', async () => {
+    const { renderer, store, camera } = await rig('boot');
+    expect(camera.position.y).toBeGreaterThan(8);
+    expect(store.getState().openStopId).toBeNull();
+    await renderer.unmount();
+  });
+
+  it('sweeps into the chase view, then ends the intro and opens Earth', async () => {
+    const { renderer, store, camera, frames } = await rig('boot');
+    store.setState({ phase: 'intro', introStartAt: performance.now() - 1500 });
+    await frames(1);
+    expect(camera.position.y).toBeGreaterThan(2.3);
+    expect(store.getState().openStopId).toBeNull();
+    store.setState({ introStartAt: performance.now() - 5000 });
+    await frames(2);
+    expect(store.getState().phase).toBe('voyage');
+    expect(camera.position.y).toBeCloseTo(2.2, 1);
+    await frames(2);
+    expect(store.getState().openStopId).toBe('earth');
+    expect(earth).toBeDefined();
+    await renderer.unmount();
+  });
+});
+
+describe('CameraRig plasma level', () => {
+  it('is silent at Earth and peaks near the heliopause crossing', async () => {
+    const levels: number[] = [];
+    plasmaLink.set = (level) => levels.push(level);
+    const store = createJourneyStore(route.closePoints, { phase: 'voyage', storage: null });
+    const renderer = await ReactThreeTestRenderer.create(
+      <CameraRig route={route} store={store} voyager={{ current: null }} />,
+    );
+    const at = async (p: number) => {
+      store.getState().snapTo(p);
+      journeyRuntime.position = p;
+      await ReactThreeTestRenderer.act(async () => {
+        await renderer.advanceFrames(1, 1 / 60);
+      });
+      return levels.at(-1);
+    };
+    expect(await at(0)).toBe(0);
+    const heliopause = route.closePoints.at(-1) ?? 0.8;
+    expect(await at(heliopause)).toBeGreaterThan(0.8);
+    plasmaLink.set = () => undefined;
     await renderer.unmount();
   });
 });

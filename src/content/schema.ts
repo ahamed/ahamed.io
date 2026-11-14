@@ -1,9 +1,9 @@
 import { z } from 'zod';
+import { countWords } from './words';
+
+export { countWords };
 
 const MAX_WORDS = 120;
-
-export const countWords = (text: string): number =>
-  text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
 
 const linkSchema = z.object({
   label: z.string().min(1),

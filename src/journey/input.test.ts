@@ -33,8 +33,13 @@ describe('keyToCommand', () => {
     expect(keyToCommand('Home')).toEqual({ type: 'start' });
     expect(keyToCommand('End')).toEqual({ type: 'end' });
   });
-  it('ignores Space and other keys', () => {
-    expect(keyToCommand(' ')).toBeNull();
+  it('maps M to mute and Space to autoplay', () => {
+    expect(keyToCommand('m')).toEqual({ type: 'mute' });
+    expect(keyToCommand('M')).toEqual({ type: 'mute' });
+    expect(keyToCommand(' ')).toEqual({ type: 'autoplay' });
+  });
+  it('ignores other keys', () => {
     expect(keyToCommand('a')).toBeNull();
+    expect(keyToCommand('Enter')).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { useRef } from 'react';
-import { ACESFilmicToneMapping, SRGBColorSpace, type Group } from 'three';
+import { ACESFilmicToneMapping, DefaultLoadingManager, SRGBColorSpace, type Group } from 'three';
+import { bootTracker } from '../boot/tracker';
 import { journeyStore, ROUTE } from '../store/journey';
 import { AsteroidBelt } from './bodies/AsteroidBelt';
 import { asteroidBelt, KUIPER_COLOR, kuiperBelt } from './bodies/beltPresets';
@@ -14,6 +15,9 @@ import { PostFX } from './space/PostFX';
 import { SpaceEnvironment } from './space/SpaceEnvironment';
 import { SpeedDust } from './space/SpeedDust';
 import { Voyager } from './voyager/Voyager';
+
+// The scene's code has loaded: show it on the boot panel and count its textures from here.
+bootTracker.attach(DefaultLoadingManager);
 
 const BELT = asteroidBelt(ROUTE);
 const KUIPER = kuiperBelt(ROUTE);

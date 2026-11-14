@@ -26,7 +26,11 @@ export const blipParams = (): BlipParams => ({
 
 const SILENCE = 0.0001;
 
-export function playBlip(ctx: BaseAudioContext, params: BlipParams): void {
+export function playBlip(
+  ctx: BaseAudioContext,
+  params: BlipParams,
+  destination: AudioNode = ctx.destination,
+): void {
   const now = ctx.currentTime;
   const end = now + params.attack + params.decay;
   for (const voice of params.voices) {
@@ -39,7 +43,7 @@ export function playBlip(ctx: BaseAudioContext, params: BlipParams): void {
     gain.gain.linearRampToValueAtTime(params.peakGain * voice.level, now + params.attack);
     gain.gain.exponentialRampToValueAtTime(SILENCE, end);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(destination);
     osc.start(now);
     osc.stop(end);
   }

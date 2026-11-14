@@ -1,0 +1,95 @@
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: var(--color-bg);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  transition: opacity 300ms ease;
+}
+
+.boot[data-leaving] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.panel {
+  width: min(34rem, 100%);
+}
+
+.log {
+  min-height: 6.4em;
+  white-space: pre-wrap;
+}
+
+.log p {
+  margin: 0;
+}
+
+.prompt {
+  opacity: 0.6;
+}
+
+.bar {
+  margin: 1.25rem 0 0;
+  letter-spacing: 0.04em;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.begin,
+.silent {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.begin {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--color-accent);
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.silent {
+  padding: 0.25rem;
+  border: 0;
+  opacity: 0.7;
+  text-decoration: underline;
+}
+
+.begin:focus-visible,
+.silent:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.begin:hover,
+.begin:focus-visible {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.silent:hover,
+.silent:focus-visible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot {
+    transition: none;
+  }
+}

@@ -31,6 +31,60 @@ export interface JourneyState {
   flyTo: (target: number, now: number) => void;
   endFlight: () => void;
   setFinaleShown: (shown: boolean) => void;
+  /** Boot panel, then the intro sweep, then the voyage. Voyage input is ignored while booting. */
+  phase: Phase;
+  /** `performance.now()` when the intro sweep started. */
+  introStartAt: number;
+  /** Leaves the boot panel; `silent` starts muted, `reduced` skips the intro sweep. */
+  begin: (now: number, options: { silent: boolean; reduced: boolean }) => void;
+  endIntro: () => void;
+  /** Whether all sound is muted; remembered across visits. */
+  muted: boolean;
+  toggleMute: () => void;
+  /** Whether autoplay is hopping from stop to stop. Any voyage input turns it off. */
+  autoplay: boolean;
+  toggleAutoplay: () => void;
+  /** Moves the target for autoplay without counting as manual input that stops it. */
+  autoplayTo: (target: number, now: number) => void;
+}
+
+export type Phase = 'boot' | 'intro' | 'voyage';
+
+/** The part of `Storage` the store needs, so tests can pass a fake. */
+export interface KeyValueStorage {
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+}
+
+interface Options {
+  phase?: Phase;
+  storage?: KeyValueStorage | null;
+}
+
+const MUTED_KEY = 'voyage:muted';
+
+function browserStorage(): KeyValueStorage | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function readMuted(storage: KeyValueStorage | null): boolean {
+  try {
+    return storage?.getItem(MUTED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeMuted(storage: KeyValueStorage | null, muted: boolean): void {
+  try {
+    storage?.setItem(MUTED_KEY, muted ? '1' : '0');
+  } catch {
+    // Storage blocked: mute still works for this session.
+  }
 }
 
 export interface Flight {
@@ -40,64 +94,114 @@ export interface Flight {
   startAt: number;
 }
 
-export function createJourneyStore(closePoints: readonly number[]) {
+export function createJourneyStore(
+  closePoints: readonly number[],
+  { phase = 'boot', storage = browserStorage() }: Options = {},
+) {
   const gaps = closePoints.slice(1).map((cp, i) => cp - (closePoints[i] ?? 0));
   const meanGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 1;
   const stepSize = meanGap * ARROW_STEP_FRACTION;
 
-  return createStore<JourneyState>()((set, get) => ({
-    target: 0,
-    lastInputAt: 0,
-    openStopId: null,
-    audioUnlocked: false,
-    flight: null,
-    finaleShown: false,
-    nudge: (delta, now) => {
-      set({ target: applyDelta(get().target, delta), lastInputAt: now, flight: null });
-    },
-    step: (dir, now) => {
-      get().nudge(dir * stepSize, now);
-    },
-    goToStop: (dir, now) => {
-      set({
-        target: neighbourTarget(get().target, closePoints, dir),
-        lastInputAt: now,
-        flight: null,
-      });
-    },
-    goToStart: (now) => {
-      set({ target: 0, lastInputAt: now, flight: null });
-    },
-    goToEnd: (now) => {
-      set({ target: 1, lastInputAt: now, flight: null });
-    },
-    snapTo: (target) => {
-      set({ target: clampProgress(target) });
-    },
-    setOpenStop: (id) => {
-      if (get().openStopId !== id) set({ openStopId: id });
-    },
-    setAudioUnlocked: () => {
-      set({ audioUnlocked: true });
-    },
-    flyBack: (now, reduced) => {
-      if (reduced) {
-        journeyRuntime.position = 0;
-        set({ target: 0, lastInputAt: now, flight: null });
-        return;
-      }
-      set({ flight: { from: get().target, startAt: now }, lastInputAt: now });
-    },
-    flyTo: (target, now) => {
-      set({ target: clampProgress(target), lastInputAt: now });
-    },
-    endFlight: () => {
-      if (get().flight) set({ flight: null });
-    },
-    setFinaleShown: (shown) => {
-      if (get().finaleShown !== shown) set({ finaleShown: shown });
-    },
-  }));
+  return createStore<JourneyState>()((set, get) => {
+    /**
+     * Gate for voyage input: false while booting; ends the intro sweep at once otherwise.
+     * Manual input also stops a rewind and autoplay (the callers set those fields).
+     */
+    const accept = (): boolean => {
+      const current = get().phase;
+      if (current === 'boot') return false;
+      if (current === 'intro') set({ phase: 'voyage' });
+      return true;
+    };
+    const manual = { flight: null, autoplay: false } as const;
+
+    return {
+      target: 0,
+      lastInputAt: 0,
+      openStopId: null,
+      audioUnlocked: false,
+      flight: null,
+      finaleShown: false,
+      nudge: (delta, now) => {
+        if (!accept()) return;
+        set({ target: applyDelta(get().target, delta), lastInputAt: now, ...manual });
+      },
+      step: (dir, now) => {
+        get().nudge(dir * stepSize, now);
+      },
+      goToStop: (dir, now) => {
+        if (!accept()) return;
+        set({
+          target: neighbourTarget(get().target, closePoints, dir),
+          lastInputAt: now,
+          ...manual,
+        });
+      },
+      goToStart: (now) => {
+        if (!accept()) return;
+        set({ target: 0, lastInputAt: now, ...manual });
+      },
+      goToEnd: (now) => {
+        if (!accept()) return;
+        set({ target: 1, lastInputAt: now, ...manual });
+      },
+      snapTo: (target) => {
+        set({ target: clampProgress(target) });
+      },
+      setOpenStop: (id) => {
+        if (get().openStopId !== id) set({ openStopId: id });
+      },
+      setAudioUnlocked: () => {
+        set({ audioUnlocked: true });
+      },
+      flyBack: (now, reduced) => {
+        if (!accept()) return;
+        if (reduced) {
+          journeyRuntime.position = 0;
+          set({ target: 0, lastInputAt: now, ...manual });
+          return;
+        }
+        set({ flight: { from: get().target, startAt: now }, lastInputAt: now, autoplay: false });
+      },
+      flyTo: (target, now) => {
+        set({ target: clampProgress(target), lastInputAt: now });
+      },
+      endFlight: () => {
+        if (get().flight) set({ flight: null });
+      },
+      setFinaleShown: (shown) => {
+        if (get().finaleShown !== shown) set({ finaleShown: shown });
+      },
+      phase,
+      introStartAt: 0,
+      begin: (now, { silent, reduced }) => {
+        if (get().phase !== 'boot') return;
+        if (silent) writeMuted(storage, true);
+        set({
+          phase: reduced ? 'voyage' : 'intro',
+          introStartAt: now,
+          muted: silent || get().muted,
+        });
+      },
+      endIntro: () => {
+        if (get().phase === 'intro') set({ phase: 'voyage' });
+      },
+      muted: readMuted(storage),
+      toggleMute: () => {
+        const muted = !get().muted;
+        writeMuted(storage, muted);
+        set({ muted });
+      },
+      autoplay: false,
+      toggleAutoplay: () => {
+        if (get().phase !== 'voyage' && !get().autoplay) return;
+        set({ autoplay: !get().autoplay });
+      },
+      autoplayTo: (target, now) => {
+        set({ target: clampProgress(target), lastInputAt: now, flight: null });
+      },
+    };
+  });
 }
 
 export type JourneyStore = ReturnType<typeof createJourneyStore>;

@@ -1,11 +1,15 @@
 import { lazy, Suspense, useRef, useState } from 'react';
+import { bootTracker } from '../boot/tracker';
 import { FINALE, STOPS } from '../content/journey';
+import { useAutoplay } from '../input/useAutoplay';
 import { useKeyboardInput } from '../input/useKeyboardInput';
 import { useTouchInput } from '../input/useTouchInput';
 import { useWheelInput } from '../input/useWheelInput';
 import { canUseWebGL } from '../scene/webgl';
-import { journeyStore } from '../store/journey';
+import { journeyStore, ROUTE } from '../store/journey';
+import { BootLoader } from '../ui/BootLoader/BootLoader';
 import { FinaleLayer } from '../ui/Finale/FinaleLayer';
+import { StatusChip } from '../ui/StatusChip/StatusChip';
 import { DialogLayer } from '../ui/TerminalDialog/DialogLayer';
 import styles from './App.module.css';
 import { shouldInspect } from './inspect';
@@ -25,6 +29,7 @@ export function App() {
   useKeyboardInput(journeyStore);
   useTouchInput(journeyStore, surface, STOPS.length);
   useAudio(journeyStore);
+  useAutoplay(journeyStore, STOPS, ROUTE.closePoints);
 
   return (
     <main ref={surface} className={styles.voyage}>
@@ -40,6 +45,8 @@ export function App() {
           </Suspense>
           <DialogLayer stops={STOPS} />
           <FinaleLayer finale={FINALE} store={journeyStore} />
+          <StatusChip store={journeyStore} />
+          <BootLoader tracker={bootTracker.store} store={journeyStore} />
         </>
       ) : (
         <p role="status" className={styles.fallback}>

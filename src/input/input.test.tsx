@@ -6,7 +6,7 @@ import { useKeyboardInput } from './useKeyboardInput';
 import { useTouchInput } from './useTouchInput';
 import { useWheelInput } from './useWheelInput';
 
-const make = () => createJourneyStore([0, 0.8]);
+const make = () => createJourneyStore([0, 0.8], { phase: 'voyage', storage: null });
 
 describe('useWheelInput', () => {
   it('moves the voyage forward on wheel down and prevents page scroll', () => {
@@ -46,6 +46,44 @@ describe('useKeyboardInput', () => {
     expect(store.getState().target).toBe(1);
     fireEvent.keyDown(window, { key: 'Home' });
     expect(store.getState().target).toBe(0);
+  });
+
+  it('toggles mute with M and autoplay with Space, without scrolling the page', () => {
+    const store = make();
+    renderHook(() => {
+      useKeyboardInput(store);
+    });
+    fireEvent.keyDown(window, { key: 'm' });
+    expect(store.getState().muted).toBe(true);
+    const space = new KeyboardEvent('keydown', { key: ' ', cancelable: true });
+    window.dispatchEvent(space);
+    expect(store.getState().autoplay).toBe(true);
+    expect(space.defaultPrevented).toBe(true);
+    // M is not voyage input, so it leaves autoplay running.
+    fireEvent.keyDown(window, { key: 'M' });
+    expect(store.getState().autoplay).toBe(true);
+  });
+
+  it('leaves Space to a focused button', () => {
+    const store = make();
+    function Harness() {
+      useKeyboardInput(store);
+      return <button type="button">Back to Earth</button>;
+    }
+    const { getByRole } = render(<Harness />);
+    fireEvent.keyDown(getByRole('button'), { key: ' ' });
+    expect(store.getState().autoplay).toBe(false);
+  });
+
+  it('ignores M and Space while booting', () => {
+    const store = createJourneyStore([0, 0.8], { phase: 'boot', storage: null });
+    renderHook(() => {
+      useKeyboardInput(store);
+    });
+    fireEvent.keyDown(window, { key: 'm' });
+    fireEvent.keyDown(window, { key: ' ' });
+    expect(store.getState().muted).toBe(false);
+    expect(store.getState().autoplay).toBe(false);
   });
 
   it('ignores keys typed into a text field', () => {

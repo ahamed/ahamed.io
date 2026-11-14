@@ -25,7 +25,9 @@ export type Command =
   | { type: 'step'; dir: 1 | -1 }
   | { type: 'stop'; dir: 1 | -1 }
   | { type: 'start' }
-  | { type: 'end' };
+  | { type: 'end' }
+  | { type: 'mute' }
+  | { type: 'autoplay' };
 
 export function keyToCommand(key: string): Command | null {
   switch (key) {
@@ -41,6 +43,11 @@ export function keyToCommand(key: string): Command | null {
       return { type: 'start' };
     case 'End':
       return { type: 'end' };
+    case 'm':
+    case 'M':
+      return { type: 'mute' };
+    case ' ':
+      return { type: 'autoplay' };
     default:
       return null;
   }

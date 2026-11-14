@@ -8,3 +8,8 @@ export function isEditableTarget(target: EventTarget | null): boolean {
     target instanceof HTMLSelectElement
   );
 }
+
+/** True for a focused button or link, where Space activates the control itself. */
+export function isInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLButtonElement || target instanceof HTMLAnchorElement;
+}

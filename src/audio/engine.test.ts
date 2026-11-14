@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createAudioEngine, type AudioEngine } from './engine';
 import { createFakeAudioContext } from '../test/fakeAudio';
+import { droneParams } from './drone';
+import { createAudioEngine, type AudioEngine } from './engine';
 
 let engine: AudioEngine | undefined;
 afterEach(() => engine?.dispose());
@@ -8,49 +9,94 @@ afterEach(() => engine?.dispose());
 function setup() {
   const fake = createFakeAudioContext();
   const createContext = vi.fn(() => fake.ctx);
-  engine = createAudioEngine({ createContext, target: window });
+  engine = createAudioEngine({ createContext });
   return { ...fake, createContext, engine };
 }
 
 describe('audio engine', () => {
-  it('creates no AudioContext and plays nothing before a gesture', () => {
+  it('creates no AudioContext and plays nothing before start', () => {
     const { createContext, engine, calls } = setup();
-    expect(engine.isUnlocked()).toBe(false);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(engine.isStarted()).toBe(false);
     expect(engine.blip()).toBe(false);
     expect(createContext).not.toHaveBeenCalled();
     expect(calls).toHaveLength(0);
   });
 
-  it.each([
-    ['keydown', () => new KeyboardEvent('keydown', { key: 'a' })],
-    ['pointerdown', () => new Event('pointerdown')],
-    ['touchstart', () => new Event('touchstart')],
-  ])('unlocks on %s', (_name, makeEvent) => {
-    const { engine, calls } = setup();
-    window.dispatchEvent(makeEvent());
-    expect(engine.isUnlocked()).toBe(true);
+  it('starts once: resumes the context and routes everything through a master gain', () => {
+    const { createContext, engine, calls, ctx } = setup();
+    engine.start();
+    engine.start();
+    expect(createContext).toHaveBeenCalledOnce();
+    expect(engine.isStarted()).toBe(true);
     expect(calls.some((c) => c.method === 'resume')).toBe(true);
+    const toDestination = calls.filter(
+      (c) => c.method === 'connect' && c.args[0] === ctx.destination,
+    );
+    expect(toDestination).toHaveLength(1);
+  });
+
+  it('fades the drone in from silence to its level over about 4 s', () => {
+    const { engine, calls } = setup();
+    engine.start();
+    const { gain, fadeIn } = droneParams();
+    const ramp = calls.find((c) => c.method === 'gain.linear' && c.args[0] === gain);
+    expect(ramp?.args[1]).toBeCloseTo(1 + fadeIn);
+  });
+
+  it('starts the drone and plasma sources', () => {
+    const { engine, calls } = setup();
+    engine.start();
+    expect(calls.filter((c) => c.method === 'start').length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('blips only after start and while not muted', () => {
+    const { engine } = setup();
+    engine.start();
+    expect(engine.blip()).toBe(true);
+    engine.setMuted(true);
+    expect(engine.blip()).toBe(false);
+    engine.setMuted(false);
     expect(engine.blip()).toBe(true);
   });
 
-  it('does not unlock on wheel', () => {
-    const { engine } = setup();
-    window.dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
-    expect(engine.isUnlocked()).toBe(false);
-  });
-
-  it('drops a blip requested before unlock instead of queueing it', () => {
+  it('ramps the master gain on mute, without a click', () => {
     const { engine, calls } = setup();
-    engine.blip();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
-    expect(calls.filter((c) => c.method === 'start')).toHaveLength(0);
+    engine.start();
+    engine.setMuted(true);
+    const ramp = calls.filter((c) => c.method === 'gain.target').at(-1);
+    expect(ramp?.args[0]).toBe(0);
+    expect(ramp?.args[2]).toBeLessThanOrEqual(0.06);
   });
 
-  it('notifies listeners when unlocked', () => {
-    const { engine } = setup();
+  it('starts silent when muted before start', () => {
+    const { engine, calls } = setup();
+    engine.setMuted(true);
+    engine.start();
+    expect(engine.blip()).toBe(false);
+    expect(calls.some((c) => c.method === 'gain.set' && c.args[0] === 0)).toBe(true);
+  });
+
+  it('moves the plasma level only on a meaningful change', () => {
+    const { engine, calls } = setup();
+    engine.setPlasma(0.5);
+    engine.start();
+    const targets = () => calls.filter((c) => c.method === 'gain.target').length;
+    const before = targets();
+    engine.setPlasma(0.5);
+    engine.setPlasma(0.502);
+    expect(targets()).toBe(before);
+    engine.setPlasma(0.6);
+    expect(targets()).toBe(before + 1);
+  });
+
+  it('notifies listeners when started and closes the context on dispose', () => {
+    const { engine, calls } = setup();
     const listener = vi.fn();
-    engine.onUnlock(listener);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+    engine.onStart(listener);
+    engine.start();
     expect(listener).toHaveBeenCalledOnce();
+    engine.dispose();
+    expect(calls.some((c) => c.method === 'close')).toBe(true);
   });
 });

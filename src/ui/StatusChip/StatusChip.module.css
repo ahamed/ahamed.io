@@ -1,0 +1,43 @@
+.chip {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 5;
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: 0.375rem;
+  backdrop-filter: blur(6px);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.toggle {
+  padding: 0.3rem 0.55rem;
+  font: inherit;
+  color: var(--color-accent);
+  background: transparent;
+  border: 0;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.toggle:hover,
+.toggle:focus-visible {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+.toggle[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+/* Phones: the dialog is a bottom sheet, so the chip moves to the top. */
+@media (max-width: 767px) {
+  .chip {
+    top: 0.75rem;
+    bottom: auto;
+    left: 0.75rem;
+  }
+}
