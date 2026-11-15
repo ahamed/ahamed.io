@@ -1,7 +1,7 @@
-import { useMemo, useRef } from 'react';
-import { AdditiveBlending, BackSide, Color, type Group } from 'three';
+import { useRef } from 'react';
+import type { Group } from 'three';
 import { useKtx2 } from '../ktx2';
-import { atmosphereFragment, atmosphereVertex } from '../shaders/atmosphere';
+import { Atmosphere } from './Atmosphere';
 import { MOON_PRESETS, type MoonPresetId } from './moonPresets';
 import { useDrawDistance } from './useDrawDistance';
 
@@ -11,13 +11,6 @@ export function TexturedMoon({ preset, radius }: { preset: MoonPresetId; radius:
   const [map] = useKtx2([`1k_${preset}`]);
   const root = useRef<Group>(null);
   useDrawDistance(root, radius);
-  const hazeUniforms = useMemo(
-    () =>
-      haze
-        ? { uColor: { value: new Color(haze) }, uPower: { value: 3.0 }, uIntensity: { value: 1.1 } }
-        : null,
-    [haze],
-  );
 
   return (
     <group name={`moon-${preset}-root`} ref={root}>
@@ -27,19 +20,16 @@ export function TexturedMoon({ preset, radius }: { preset: MoonPresetId; radius:
           <meshStandardMaterial map={map} color={tint} roughness={roughness} metalness={0} />
         </mesh>
       </group>
-      {hazeUniforms && (
-        <mesh name={`moon-${preset}-haze`} scale={1.04}>
-          <sphereGeometry args={[radius, 64, 32]} />
-          <shaderMaterial
-            vertexShader={atmosphereVertex}
-            fragmentShader={atmosphereFragment}
-            uniforms={hazeUniforms}
-            side={BackSide}
-            blending={AdditiveBlending}
-            transparent
-            depthWrite={false}
-          />
-        </mesh>
+      {haze && (
+        <Atmosphere
+          name={`moon-${preset}-haze`}
+          radius={radius}
+          scale={1.06}
+          color={haze}
+          innerPower={10}
+          intensity={0.55}
+          segments={64}
+        />
       )}
     </group>
   );
