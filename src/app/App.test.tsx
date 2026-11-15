@@ -16,30 +16,52 @@ beforeEach(() => {
 
 describe('App shell', () => {
   it('renders one main landmark containing the site owner heading', () => {
+    webgl.supported = true;
     render(<App />);
-    const mains = screen.getAllByRole('main');
-    expect(mains).toHaveLength(1);
-    expect(screen.getByRole('heading', { level: 1, name: 'Sajeeb Ahamed' })).toBeInTheDocument();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1, name: 'Sajeeb Ahamed' })).toHaveClass(
+      'visually-hidden',
+    );
   });
 
-  it('keeps the heading visually hidden but accessible', () => {
+  it('shows Text mode, with a note, when WebGL is unavailable', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveClass('visually-hidden');
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(screen.getByText(/needs WebGL/)).toBeInTheDocument();
+    expect(screen.getAllByRole('article')).toHaveLength(STOPS.length - 1);
+    expect(screen.queryByTestId('voyage')).toBeNull();
   });
 
-  it('shows a fallback message when WebGL is unavailable', () => {
+  it('shows Text mode instead of the voyage for ?text', () => {
+    webgl.supported = true;
+    window.history.replaceState(null, '', '/?text');
     render(<App />);
-    expect(screen.getByText(/3D view not supported/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Back to the voyage' })).toBeInTheDocument();
     expect(screen.queryByTestId('voyage')).toBeNull();
     expect(screen.queryByRole('dialog', { name: 'Mission boot' })).toBeNull();
+    expect(document.querySelectorAll('[data-stop]')).toHaveLength(0);
   });
 
-  it('mounts the voyage and one dialog per stop when WebGL is available', async () => {
+  it('mounts the voyage, one dialog per stop and the boot panel when WebGL is available', async () => {
     webgl.supported = true;
     render(<App />);
     expect(await screen.findByTestId('voyage')).toBeInTheDocument();
     expect(document.querySelectorAll('[data-stop]')).toHaveLength(STOPS.length);
     expect(screen.getByRole('dialog', { name: 'Mission boot' })).toBeInTheDocument();
+  });
+
+  it('keeps every card readable in the voyage, behind a skip link that comes first', async () => {
+    webgl.supported = true;
+    render(<App />);
+    await screen.findByTestId('voyage');
+    const skip = screen.getByRole('link', { name: 'Skip to text version' });
+    const focusable = document.querySelectorAll('a[href], button');
+    expect(focusable[0]).toBe(skip);
+    const hidden = document.getElementById('text-version');
+    expect(hidden?.closest('.visually-hidden')).not.toBeNull();
+    for (const stop of STOPS) {
+      expect(screen.getAllByRole('heading', { name: stop.title }).length).toBeGreaterThan(0);
+    }
   });
 
   it('shows the dev-only inspector instead of the voyage with ?inspect', async () => {

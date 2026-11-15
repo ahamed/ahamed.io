@@ -93,3 +93,28 @@
     transition: none;
   }
 }
+
+/* Always there, even while loading. Under reduced motion it carries as much weight as Begin
+   silently, for visitors who may prefer not to fly at all. */
+.text {
+  display: inline-block;
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  color: inherit;
+  opacity: 0.6;
+}
+
+.text[data-prominent] {
+  font-size: inherit;
+  opacity: 0.85;
+}
+
+.text:hover,
+.text:focus-visible {
+  opacity: 1;
+}
+
+.text:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}

@@ -65,7 +65,9 @@ test.describe('HUD', () => {
   test('the telemetry and map dim in the finale', async ({ page }) => {
     await start(page);
     await page.keyboard.press('End');
-    await expect(page.getByRole('region', { name: 'Open a channel' })).toBeVisible(OPEN);
+    await expect(
+      page.locator('[data-finale]').getByRole('region', { name: 'Open a channel' }),
+    ).toBeVisible(OPEN);
     await expect
       .poll(
         async () => Number(await telemetry(page).evaluate((e) => getComputedStyle(e).opacity)),

@@ -46,4 +46,9 @@ describe('Hud', () => {
     });
     expect(root).toHaveAttribute('data-dim');
   });
+
+  it('links to Text mode', () => {
+    setup('voyage');
+    expect(screen.getByRole('link', { name: 'Text mode' })).toHaveAttribute('href', '/?text');
+  });
 });

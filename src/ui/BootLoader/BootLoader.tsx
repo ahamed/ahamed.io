@@ -132,6 +132,9 @@ export function BootLoader({ tracker, store }: Props) {
             </button>
           </div>
         )}
+        <a className={styles.text} href="/?text" data-prominent={reduced ? '' : undefined}>
+          Read as text
+        </a>
       </div>
     </div>
   );

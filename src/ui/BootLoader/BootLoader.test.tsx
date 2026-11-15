@@ -81,4 +81,17 @@ describe('BootLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Begin silently' }));
     expect(store.getState().muted).toBe(true);
   });
+
+  it('offers Read as text from the start, even while loading', () => {
+    setup();
+    const link = screen.getByRole('link', { name: 'Read as text' });
+    expect(link).toHaveAttribute('href', '/?text');
+    expect(link).not.toHaveAttribute('data-prominent');
+  });
+
+  it('makes Read as text prominent under reduced motion', () => {
+    stubReducedMotion(true);
+    setup();
+    expect(screen.getByRole('link', { name: 'Read as text' })).toHaveAttribute('data-prominent');
+  });
 });

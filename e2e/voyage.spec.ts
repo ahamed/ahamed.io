@@ -174,10 +174,12 @@ test.describe('voyage', () => {
 
   test('End turns back to the Pale Blue Dot and shows the contact card', async ({ page }) => {
     await page.keyboard.press('End');
-    const card = page.getByRole('region', { name: 'Open a channel' });
+    const card = page.locator('[data-finale]').getByRole('region', { name: 'Open a channel' });
     await expect(card).toBeVisible(OPEN_TIMEOUT);
     await expect(
-      page.getByText('Every line of code I’ve shipped was written on that dot.'),
+      page
+        .locator('[data-finale]')
+        .getByText('Every line of code I’ve shipped was written on that dot.'),
     ).toBeVisible();
     await expect(card.getByRole('link', { name: 'Email' })).toHaveAttribute('href', /^mailto:/);
     await expect(card.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
@@ -205,10 +207,14 @@ test.describe('voyage', () => {
 
   test('the contact card stays hidden at the heliopause stop', async ({ page }) => {
     await page.keyboard.press('End');
-    await expect(page.getByRole('region', { name: 'Open a channel' })).toBeVisible(OPEN_TIMEOUT);
+    await expect(
+      page.locator('[data-finale]').getByRole('region', { name: 'Open a channel' }),
+    ).toBeVisible(OPEN_TIMEOUT);
     await page.keyboard.press('PageUp');
     await expect(dialog(page, 'heliopause')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
-    await expect(page.getByRole('region', { name: 'Open a channel' })).toHaveCount(0);
+    await expect(
+      page.locator('[data-finale]').getByRole('region', { name: 'Open a channel' }),
+    ).toHaveCount(0);
     await expect(page.locator('[data-finale]')).toHaveAttribute('data-dot', 'hidden');
   });
 
@@ -216,7 +222,7 @@ test.describe('voyage', () => {
     // Flies the whole route out and back after a boot.
     test.setTimeout(60_000);
     await page.keyboard.press('End');
-    const card = page.getByRole('region', { name: 'Open a channel' });
+    const card = page.locator('[data-finale]').getByRole('region', { name: 'Open a channel' });
     await expect(card).toBeVisible(OPEN_TIMEOUT);
     await card.getByRole('button', { name: 'Back to Earth' }).click();
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
@@ -246,7 +252,7 @@ test.describe('voyage on a phone', () => {
     await begin(page);
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN_TIMEOUT);
     await page.keyboard.press('End');
-    const card = page.getByRole('region', { name: 'Open a channel' });
+    const card = page.locator('[data-finale]').getByRole('region', { name: 'Open a channel' });
     await expect(card).toBeVisible(OPEN_TIMEOUT);
     await expect
       .poll(

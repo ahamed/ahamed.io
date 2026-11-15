@@ -11,8 +11,11 @@ import { BootLoader } from '../ui/BootLoader/BootLoader';
 import { FinaleLayer } from '../ui/Finale/FinaleLayer';
 import { Hud } from '../ui/Hud/Hud';
 import { DialogLayer } from '../ui/TerminalDialog/DialogLayer';
+import { HiddenContent, SkipLink } from '../ui/TextMode/HiddenContent';
+import { TextMode } from '../ui/TextMode/TextMode';
 import styles from './App.module.css';
 import { shouldInspect } from './inspect';
+import { shouldShowText } from './textMode';
 import { useAudio } from './useAudio';
 
 const Voyage = lazy(() => import('../scene/Voyage'));
@@ -20,8 +23,8 @@ const Voyage = lazy(() => import('../scene/Voyage'));
 // dropped and the inspector (and its orbit controls) never ships.
 const Inspect = import.meta.env.DEV ? lazy(() => import('../scene/voyager/Inspect')) : null;
 
-export function App() {
-  const [webgl] = useState(canUseWebGL);
+/** The 3D voyage with its overlays, input, sound and autoplay. Only mounted with WebGL. */
+function VoyageApp() {
   const [inspect] = useState(() => shouldInspect(import.meta.env.DEV, window.location.search));
   const surface = useRef<HTMLElement>(null);
 
@@ -33,12 +36,13 @@ export function App() {
 
   return (
     <main ref={surface} className={styles.voyage}>
+      <SkipLink />
       <h1 className="visually-hidden">Sajeeb Ahamed</h1>
-      {webgl && inspect && Inspect ? (
+      {inspect && Inspect ? (
         <Suspense fallback={null}>
           <Inspect />
         </Suspense>
-      ) : webgl ? (
+      ) : (
         <>
           <Suspense fallback={null}>
             <Voyage />
@@ -47,12 +51,23 @@ export function App() {
           <FinaleLayer finale={FINALE} store={journeyStore} />
           <Hud store={journeyStore} stops={STOPS} closePoints={ROUTE.closePoints} />
           <BootLoader tracker={bootTracker.store} store={journeyStore} />
+          <HiddenContent />
         </>
-      ) : (
-        <p role="status" className={styles.fallback}>
-          3D view not supported in this browser.
-        </p>
       )}
     </main>
   );
+}
+
+/** Text mode for `?text` or without WebGL (no 3D, no input hooks); otherwise the voyage. */
+export function App() {
+  const [webgl] = useState(canUseWebGL);
+  const [text] = useState(() => shouldShowText(window.location.search, webgl));
+  if (text) {
+    return (
+      <main>
+        <TextMode webglMissing={!webgl} />
+      </main>
+    );
+  }
+  return <VoyageApp />;
 }

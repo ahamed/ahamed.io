@@ -36,6 +36,9 @@ export function StatusChip({ store }: { store: JourneyStore }) {
       >
         <span aria-hidden="true">{autoplay ? '❚❚' : '▶'} autoplay · Space</span>
       </button>
+      <a className={styles.toggle} href="/?text">
+        Text mode
+      </a>
     </div>
   );
 }
