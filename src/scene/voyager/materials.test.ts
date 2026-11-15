@@ -21,6 +21,17 @@ describe('createVoyagerMaterials', () => {
     set.dispose();
   });
 
+  it('keeps the dish a matte mid-grey that does not outshine the bus', () => {
+    const set = createVoyagerMaterials(null);
+    const dish = set.slots.dish;
+    const metal = set.slots.metal;
+    const { r, g, b } = dish.color; // linear
+    expect(0.2126 * r + 0.7152 * g + 0.0722 * b).toBeLessThanOrEqual(0.3);
+    expect(dish.metalness).toBeLessThanOrEqual(0.1);
+    expect(dish.envMapIntensity).toBeLessThan(metal.envMapIntensity);
+    set.dispose();
+  });
+
   it('gives the Golden Record a groove roughness map', () => {
     const set = createVoyagerMaterials(null);
     expect(set.slots.record.roughnessMap).toBeInstanceOf(DataTexture);

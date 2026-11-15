@@ -6,7 +6,7 @@ import { buildVoyager, type VoyagerModel } from './build';
 import { createSpaceEnvironment } from './environment';
 import { createVoyagerMaterials, type VoyagerMaterials } from './materials';
 import { createPose, voyagerPoseInto } from './motion';
-import { VOYAGER_ORIENTATION } from './orientation';
+import { VOYAGER_ORIENTATION, VOYAGER_SCALE } from './orientation';
 import { PARTS, PIVOTS, type MotionGroup } from './parts';
 
 const ORIENTATION: [number, number, number] = [...VOYAGER_ORIENTATION];
@@ -96,7 +96,7 @@ export function Voyager(props: { position?: [number, number, number] }) {
 
   const shared = { model, materials };
   return (
-    <group {...props} scale={0.45}>
+    <group {...props} scale={VOYAGER_SCALE}>
       <group name="orientation" rotation={ORIENTATION}>
         <group name="attitude" ref={attitude}>
           <Meshes group="static" {...shared} />

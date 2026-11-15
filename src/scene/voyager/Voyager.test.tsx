@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { STOPS } from '../../content/journey';
 import { buildRoute } from '../../journey/route';
 import { Bodies } from '../bodies/Bodies';
-import { VOYAGER_ORIENTATION } from './orientation';
+import { VOYAGER_ORIENTATION, VOYAGER_SCALE } from './orientation';
 import { PARTS, REQUIRED_PARTS } from './parts';
 import { Voyager } from './Voyager';
 
@@ -86,6 +86,11 @@ describe('Voyager', () => {
       const scene = renderer.scene.instance;
       const orientation = findGroup(scene, 'orientation');
       expect(orientation.getObjectByName('attitude')).toBeInstanceOf(Group);
+      expect(orientation.parent?.scale.toArray()).toEqual([
+        VOYAGER_SCALE,
+        VOYAGER_SCALE,
+        VOYAGER_SCALE,
+      ]);
       const expected = [...VOYAGER_ORIENTATION];
       expect(orientation.rotation.toArray().slice(0, 3)).toEqual(expected);
       await ReactThreeTestRenderer.act(async () => {

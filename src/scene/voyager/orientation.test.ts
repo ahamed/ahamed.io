@@ -1,6 +1,6 @@
 import { Euler, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { dishAxisInto, VOYAGER_ORIENTATION } from './orientation';
+import { dishAxisInto, VOYAGER_ORIENTATION, VOYAGER_SCALE } from './orientation';
 
 const DEG = Math.PI / 180;
 
@@ -30,5 +30,10 @@ describe('Voyager orientation', () => {
     expect(Math.abs(yaw - Math.PI)).toBeGreaterThan(0);
     expect(Math.abs(yaw - Math.PI)).toBeLessThan(45 * DEG);
     expect(roll).toBe(0);
+  });
+
+  it('draws Voyager about a third larger than the M1 scale of 0.45', () => {
+    expect(VOYAGER_SCALE / 0.45).toBeGreaterThanOrEqual(1.25);
+    expect(VOYAGER_SCALE / 0.45).toBeLessThanOrEqual(1.4);
   });
 });
