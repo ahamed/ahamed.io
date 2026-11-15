@@ -20,7 +20,8 @@ export interface QualityProfile {
 const PROFILES: Record<Tier, QualityProfile> = {
   high: {
     maxDpr: 2,
-    multisampling: 4,
+    // 2×, not 4×: the two half-float composer buffers dominate texture memory (M10 budget).
+    multisampling: 2,
     bloom: 'full',
     grain: true,
     beltFraction: 1,

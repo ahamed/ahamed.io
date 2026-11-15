@@ -15,10 +15,12 @@ import { HiddenContent, SkipLink } from '../ui/TextMode/HiddenContent';
 import { TextMode } from '../ui/TextMode/TextMode';
 import styles from './App.module.css';
 import { shouldInspect } from './inspect';
+import { isPerf } from './perf';
 import { shouldShowText } from './textMode';
 import { useAudio } from './useAudio';
 
 const Voyage = lazy(() => import('../scene/Voyage'));
+const PerfOverlay = lazy(() => import('../ui/PerfOverlay/PerfOverlay'));
 // `import.meta.env.DEV` is replaced with `false` in production builds, so this import is
 // dropped and the inspector (and its orbit controls) never ships.
 const Inspect = import.meta.env.DEV ? lazy(() => import('../scene/voyager/Inspect')) : null;
@@ -26,6 +28,7 @@ const Inspect = import.meta.env.DEV ? lazy(() => import('../scene/voyager/Inspec
 /** The 3D voyage with its overlays, input, sound and autoplay. Only mounted with WebGL. */
 function VoyageApp() {
   const [inspect] = useState(() => shouldInspect(import.meta.env.DEV, window.location.search));
+  const [perf] = useState(() => isPerf(window.location.search));
   const surface = useRef<HTMLElement>(null);
 
   useWheelInput(journeyStore, STOPS.length);
@@ -47,6 +50,12 @@ function VoyageApp() {
           <Suspense fallback={null}>
             <Voyage />
           </Suspense>
+          {/* Before the dialogs, so they paint over it. */}
+          {perf ? (
+            <Suspense fallback={null}>
+              <PerfOverlay />
+            </Suspense>
+          ) : null}
           <DialogLayer stops={STOPS} />
           <FinaleLayer finale={FINALE} store={journeyStore} />
           <Hud store={journeyStore} stops={STOPS} closePoints={ROUTE.closePoints} />

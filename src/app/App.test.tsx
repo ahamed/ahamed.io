@@ -6,6 +6,7 @@ const webgl = vi.hoisted(() => ({ supported: false }));
 vi.mock('../scene/webgl', () => ({ canUseWebGL: () => webgl.supported }));
 vi.mock('../scene/Voyage', () => ({ default: () => <div data-testid="voyage" /> }));
 vi.mock('../scene/voyager/Inspect', () => ({ default: () => <div data-testid="inspect" /> }));
+vi.mock('../ui/PerfOverlay/PerfOverlay', () => ({ default: () => <div data-testid="perf" /> }));
 
 const { App } = await import('./App');
 
@@ -72,5 +73,24 @@ describe('App shell', () => {
     expect(screen.queryByTestId('voyage')).toBeNull();
     expect(document.querySelectorAll('[data-stop]')).toHaveLength(0);
     expect(screen.getByRole('heading', { level: 1, name: 'Sajeeb Ahamed' })).toBeInTheDocument();
+  });
+
+  it('shows the performance overlay with ?perf, before the dialogs', async () => {
+    webgl.supported = true;
+    window.history.replaceState(null, '', '/?perf');
+    render(<App />);
+    const perf = await screen.findByTestId('perf');
+    const dialog = document.querySelector('[data-stop]');
+    expect(dialog).not.toBeNull();
+    expect(
+      perf.compareDocumentPosition(dialog as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('does not load the performance overlay without ?perf', async () => {
+    webgl.supported = true;
+    render(<App />);
+    await screen.findByTestId('voyage');
+    expect(screen.queryByTestId('perf')).toBeNull();
   });
 });

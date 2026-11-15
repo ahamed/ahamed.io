@@ -54,6 +54,8 @@ function createSpeedDust() {
   lines.name = 'speed-dust';
   lines.frustumCulled = false;
   lines.visible = false;
+  // Reused every frame by update().
+  const response = { opacity: 0, stretch: 0 };
 
   return {
     lines,
@@ -62,7 +64,7 @@ function createSpeedDust() {
       geometry.setDrawRange(0, drawCount(DUST_COUNT, fraction) * 2);
     },
     update: (speed: number) => {
-      const { opacity, stretch } = dustResponse(speed);
+      const { opacity, stretch } = dustResponse(speed, response);
       uniforms.uOpacity.value = opacity;
       uniforms.uStretch.value = stretch;
       lines.visible = opacity > 0;

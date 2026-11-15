@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { drawCount, qualityProfile, stepTier, TIERS } from './profile';
 
 describe('qualityProfile', () => {
-  it('keeps today’s settings at high', () => {
+  it('renders the full voyage at high, with 2× multisampling', () => {
     expect(qualityProfile('high')).toEqual({
       maxDpr: 2,
-      multisampling: 4,
+      multisampling: 2,
       bloom: 'full',
       grain: true,
       beltFraction: 1,

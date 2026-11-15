@@ -5,6 +5,7 @@ import {
   Color,
   DataTexture,
   LinearFilter,
+  type Material,
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
@@ -107,7 +108,12 @@ function createSun() {
         mesh.geometry.dispose();
         mesh.material.dispose();
       }
+      // Lensflare.dispose() frees its internal materials, but not its own (invisible) mesh
+      // material or the quad geometry all flares share; three re-uploads that if drawn again.
       flare.dispose();
+      const flareMesh: Mesh = flare;
+      (flareMesh.material as Material).dispose();
+      flareMesh.geometry.dispose();
       glow.dispose();
       ghost.dispose();
     },

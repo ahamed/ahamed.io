@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "textures": "node scripts/textures.mjs",
+    "size": "node scripts/bundle-size.mjs",
     "prepare": "husky"
   },
   "dependencies": {

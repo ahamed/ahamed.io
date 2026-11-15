@@ -12,21 +12,23 @@ TypeScript is pinned to `6.0.3`. Do not upgrade to TS 7 until typescript-eslint'
 
 ## Commands
 
-| Task                           | Command                                                    |
-| ------------------------------ | ---------------------------------------------------------- |
-| Dev server                     | `pnpm dev`                                                 |
-| Production build               | `pnpm build` (`tsc -b && vite build`), then `pnpm preview` |
-| Lint (ESLint + Prettier check) | `pnpm lint`, fails on any warning or unformatted file      |
-| Auto-fix / format              | `pnpm lint:fix` / `pnpm format`                            |
-| Typecheck                      | `pnpm typecheck`                                           |
-| Unit tests                     | `pnpm test` (once), `pnpm test:watch`                      |
-| One test file                  | `pnpm vitest run src/path/file.test.ts`                    |
-| One test by name               | `pnpm vitest run -t "<test name>"`                         |
-| E2E (builds + serves)          | `pnpm e2e`                                                 |
-| One E2E spec                   | `pnpm exec playwright test e2e/<spec>.spec.ts`             |
-| Textures → KTX2                | `pnpm textures` (needs `toktx` only when a source changed) |
+| Task                           | Command                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| Dev server                     | `pnpm dev`                                                                |
+| Production build               | `pnpm build` (`tsc -b && vite build`), then `pnpm preview`                |
+| Lint (ESLint + Prettier check) | `pnpm lint`, fails on any warning or unformatted file                     |
+| Auto-fix / format              | `pnpm lint:fix` / `pnpm format`                                           |
+| Typecheck                      | `pnpm typecheck`                                                          |
+| Unit tests                     | `pnpm test` (once), `pnpm test:watch`                                     |
+| One test file                  | `pnpm vitest run src/path/file.test.ts`                                   |
+| One test by name               | `pnpm vitest run -t "<test name>"`                                        |
+| E2E (builds + serves)          | `pnpm e2e`                                                                |
+| One E2E spec                   | `pnpm exec playwright test e2e/<spec>.spec.ts`                            |
+| Textures → KTX2                | `pnpm textures` (needs `toktx` only when a source changed)                |
+| Bundle size budget             | `pnpm size` (after `pnpm build`; budgets in `scripts/bundle-budget.json`) |
+| Perf overlay                   | open `/?perf` (prod too): FPS, draw calls, triangles, texture MB, tier    |
 
-**Quality gate before calling anything done:** `pnpm lint && pnpm typecheck && pnpm test`, plus `pnpm e2e` for any UI flow. CI (`.github/workflows/ci.yml`) runs the same commands plus `pnpm build` on pushes to `main` and on pull requests. The pre-commit hook (husky + lint-staged) lints and formats only staged files. Typecheck and tests run in CI, not in the hook.
+**Quality gate before calling anything done:** `pnpm lint && pnpm typecheck && pnpm test`, plus `pnpm e2e` for any UI flow. CI (`.github/workflows/ci.yml`) runs the same commands plus `pnpm build` and `pnpm size` on pushes to `main` and on pull requests. The pre-commit hook (husky + lint-staged) lints and formats only staged files. Typecheck and tests run in CI, not in the hook.
 
 ## Required workflow
 
@@ -55,7 +57,8 @@ TypeScript is pinned to `6.0.3`. Do not upgrade to TS 7 until typescript-eslint'
 
 - TS strict with `noUncheckedIndexedAccess`. No `any`; lint enforces typescript-eslint `strictTypeChecked`.
 - Keep R3F components thin. Dispose GPU resources you create manually.
-- No per-frame allocations in `useFrame`. Mutate refs in the frame loop instead of setting state.
+- No per-frame allocations in `useFrame` (lint rejects `new` inside its callback). Mutate refs in the frame loop instead of setting state.
+- Per-tier frame budgets (draw calls, triangles, texture memory) live in `src/perf/budget.ts`; `e2e/perf.spec.ts` enforces them.
 - Accessibility: all content also renders as semantic HTML. Respect `prefers-reduced-motion`.
 - Make small, focused commits.
 

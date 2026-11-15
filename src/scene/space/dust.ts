@@ -36,10 +36,17 @@ export function wrapInto(out: Vec3, base: Readonly<Vec3>, camera: Readonly<Vec3>
   return out;
 }
 
-/** Opacity and streak length for an eased travel speed (progress per second). */
-export function dustResponse(speed: number): DustResponse {
-  if (!(speed > DEAD_ZONE)) return { opacity: 0, stretch: 0 };
-  const t = Math.min(1, (speed - DEAD_ZONE) / (FULL_SPEED - DEAD_ZONE));
-  const s = t * t * (3 - 2 * t);
-  return { opacity: DUST_LIMITS.opacity * s, stretch: DUST_LIMITS.stretch * s };
+/** Opacity and streak length for an eased travel speed (progress per second), written into `out`. */
+export function dustResponse(
+  speed: number,
+  out: DustResponse = { opacity: 0, stretch: 0 },
+): DustResponse {
+  let s = 0;
+  if (speed > DEAD_ZONE) {
+    const t = Math.min(1, (speed - DEAD_ZONE) / (FULL_SPEED - DEAD_ZONE));
+    s = t * t * (3 - 2 * t);
+  }
+  out.opacity = DUST_LIMITS.opacity * s;
+  out.stretch = DUST_LIMITS.stretch * s;
+  return out;
 }

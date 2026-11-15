@@ -3,7 +3,17 @@ import { ToneMappingMode } from 'postprocessing';
 import { useStore } from 'zustand';
 import { qualityProfile, type Tier } from '../quality/profile';
 import { qualityStore } from '../quality/store';
+import { perfRoots } from '../perf/roots';
 import { useReducedMotion } from '../useReducedMotion';
+
+/** Lets ?perf count the composer's render targets toward texture memory. */
+function registerComposer(composer: object | null) {
+  if (!composer) return undefined;
+  perfRoots.add(composer);
+  return () => {
+    perfRoots.delete(composer);
+  };
+}
 
 /**
  * Subtle cinematic finish for the 3D canvas only (dialogs are HTML outside it): bloom on the
@@ -17,7 +27,11 @@ export function PostFX({ tier: forcedTier }: { tier?: Tier }) {
   const storeTier = useStore(qualityStore, (s) => s.tier);
   const profile = qualityProfile(forcedTier ?? storeTier);
   return (
-    <EffectComposer multisampling={profile.multisampling} enableNormalPass={false}>
+    <EffectComposer
+      ref={registerComposer}
+      multisampling={profile.multisampling}
+      enableNormalPass={false}
+    >
       {profile.bloom === 'off' ? null : (
         <Bloom
           mipmapBlur

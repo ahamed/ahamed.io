@@ -40,6 +40,17 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Frame callbacks run 60+ times a second: an allocation there is garbage every frame.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.name='useFrame'] NewExpression",
+          message:
+            'No `new` inside a useFrame callback: create scratch objects once (module scope or a ref) and reuse them.',
+        },
+      ],
+    },
   },
   {
     files: ['*.{ts,js,mjs}', 'e2e/**/*.ts', 'scripts/**/*.mjs'],

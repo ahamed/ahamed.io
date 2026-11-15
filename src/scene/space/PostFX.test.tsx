@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stubReducedMotion } from '../../test/reducedMotion';
 import type { Tier } from '../quality/profile';
+import { perfRoots } from '../perf/roots';
 import { PostFX } from './PostFX';
 
 /** Effects in the order the composer received them, with their props. */
@@ -49,7 +50,7 @@ describe('PostFX', () => {
     const { renderer, names, props } = await render();
     expect(names).toEqual(['Bloom', 'Vignette', 'Noise', 'ToneMapping']);
     expect(props('ToneMapping').mode).toBe(ToneMappingMode.ACES_FILMIC);
-    expect(composerProps.multisampling).toBeGreaterThanOrEqual(4);
+    expect(composerProps.multisampling).toBe(2);
     await renderer.unmount();
   });
 
@@ -85,6 +86,17 @@ describe('PostFX', () => {
     const { renderer, names } = await render('low');
     expect(names).toEqual(['Vignette', 'ToneMapping']);
     expect(composerProps.multisampling).toBe(0);
+    await renderer.unmount();
+  });
+
+  it('registers its composer so ?perf can count the post-processing render targets', async () => {
+    const { renderer } = await render();
+    const ref = composerProps.ref as (composer: object | null) => (() => void) | undefined;
+    const composer = {};
+    const cleanup = ref(composer);
+    expect(perfRoots.has(composer)).toBe(true);
+    cleanup?.();
+    expect(perfRoots.has(composer)).toBe(false);
     await renderer.unmount();
   });
 });

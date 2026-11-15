@@ -44,6 +44,14 @@ describe('wrapInto', () => {
 });
 
 describe('dustResponse', () => {
+  it('writes into a reused object, so the frame loop allocates nothing', () => {
+    const out = { opacity: 9, stretch: 9 };
+    expect(dustResponse(0, out)).toBe(out);
+    expect(out).toEqual({ opacity: 0, stretch: 0 });
+    expect(dustResponse(1, out)).toBe(out);
+    expect(out.opacity).toBeCloseTo(DUST_LIMITS.opacity, 6);
+  });
+
   it('is fully off at rest and inside the dead zone', () => {
     expect(dustResponse(0)).toEqual({ opacity: 0, stretch: 0 });
     expect(dustResponse(0.001)).toEqual({ opacity: 0, stretch: 0 });

@@ -1,7 +1,8 @@
 import { Canvas } from '@react-three/fiber';
-import { useRef } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 import { ACESFilmicToneMapping, DefaultLoadingManager, SRGBColorSpace, type Group } from 'three';
+import { isPerf } from '../app/perf';
 import { bootTracker } from '../boot/tracker';
 import { journeyStore, ROUTE } from '../store/journey';
 import { AsteroidBelt } from './bodies/AsteroidBelt';
@@ -23,6 +24,8 @@ import { Voyager } from './voyager/Voyager';
 // The scene's code has loaded: show it on the boot panel and count its textures from here.
 bootTracker.attach(DefaultLoadingManager);
 
+const PerfProbe = lazy(() => import('./perf/LiveProbe'));
+
 const BELT = asteroidBelt(ROUTE);
 const KUIPER = kuiperBelt(ROUTE);
 
@@ -31,6 +34,7 @@ export default function Voyage() {
   const voyager = useRef<Group>(null);
   const sky = useRef<Group>(null);
   const tier = useStore(qualityStore, (s) => s.tier);
+  const [perf] = useState(() => isPerf(window.location.search));
   return (
     <Canvas
       dpr={[1, qualityProfile(tier).maxDpr]}
@@ -60,6 +64,11 @@ export default function Voyage() {
       <CameraRig route={ROUTE} store={journeyStore} voyager={voyager} sky={sky} />
       <PostFX />
       <QualityMonitor />
+      {perf ? (
+        <Suspense fallback={null}>
+          <PerfProbe />
+        </Suspense>
+      ) : null}
     </Canvas>
   );
 }

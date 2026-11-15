@@ -1,0 +1,53 @@
+/*
+ * ?perf only. Fixed top-right, under the HUD and the dialogs (it is placed before them and has
+ * no z-index), and it takes no pointer events, so it never covers a control.
+ */
+.panel {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  pointer-events: none;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  border-radius: 4px;
+  background: var(--color-panel);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--color-accent);
+}
+
+.panel dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0 0.75rem;
+  margin: 0;
+}
+
+.panel dl > div {
+  display: contents;
+}
+
+.panel dt {
+  opacity: 0.55;
+  text-transform: uppercase;
+}
+
+.panel dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel dd[data-over] {
+  color: #ffb86b;
+  font-weight: 700;
+}
+
+/* Phones: the status chip sits top-right, so the panel moves under it. */
+@media (max-width: 40rem) {
+  .panel {
+    top: 6rem;
+    right: 0.75rem;
+  }
+}
