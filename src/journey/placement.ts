@@ -48,10 +48,46 @@ export const BODY_GAP = 24;
  * does not flip back and forth between two spots.
  */
 export const STICK_SLACK = 8;
+/** Space kept between a side spot slid clear of Voyager and Voyager's box. */
+export const VOYAGER_GAP = 8;
 /** Rate at which the dialog glides to a new spot (1/s). */
 const GLIDE_RATE = 12;
 
 const clamp = (v: number, lo: number, hi: number) => (hi < lo ? lo : Math.min(hi, Math.max(lo, v)));
+
+/**
+ * A side spot's top edge: centred on the body, or, when that would cover Voyager, slid up (or
+ * else down) just clear of Voyager's box, as long as the dialog stays on screen and level with
+ * the body's centre.
+ */
+function sideY(x: number, minY: number, maxY: number, input: PlacementInput): number {
+  const { body, dialog, voyager } = input;
+  const centred = clamp(body.y - dialog.h / 2, minY, maxY);
+  if (!overlapsAt(x, centred, dialog.w, dialog.h, voyager)) return centred;
+  const level = (y: number) => y >= minY && y <= maxY && y <= body.y && y + dialog.h >= body.y;
+  const above = voyager.y - VOYAGER_GAP - dialog.h;
+  if (level(above)) return above;
+  const below = voyager.y + voyager.h + VOYAGER_GAP;
+  if (level(below)) return below;
+  return centred;
+}
+
+/**
+ * An above or below spot's left edge: centred on the body, or, when that would cover Voyager,
+ * slid left (or else right) just clear of Voyager's box, as long as the dialog stays on screen
+ * and over the body's centre.
+ */
+function stackX(y: number, minX: number, maxX: number, input: PlacementInput): number {
+  const { body, dialog, voyager } = input;
+  const centred = clamp(body.x - dialog.w / 2, minX, maxX);
+  if (!overlapsAt(centred, y, dialog.w, dialog.h, voyager)) return centred;
+  const over = (x: number) => x >= minX && x <= maxX && x <= body.x && x + dialog.w >= body.x;
+  const left = voyager.x - VOYAGER_GAP - dialog.w;
+  if (over(left)) return left;
+  const right = voyager.x + voyager.w + VOYAGER_GAP;
+  if (over(right)) return right;
+  return centred;
+}
 
 /** Writes the top-left corner of `spot` into `out` (x, y only). */
 function positionInto(out: Placement, spot: Spot, input: PlacementInput): Placement {
@@ -63,19 +99,19 @@ function positionInto(out: Placement, spot: Spot, input: PlacementInput): Placem
   switch (spot) {
     case 'left':
       out.x = body.x - body.r - BODY_GAP - dialog.w;
-      out.y = clamp(body.y - dialog.h / 2, minY, maxY);
+      out.y = sideY(out.x, minY, maxY, input);
       break;
     case 'right':
       out.x = body.x + body.r + BODY_GAP;
-      out.y = clamp(body.y - dialog.h / 2, minY, maxY);
+      out.y = sideY(out.x, minY, maxY, input);
       break;
     case 'above':
-      out.x = clamp(body.x - dialog.w / 2, minX, maxX);
       out.y = body.y - body.r - BODY_GAP - dialog.h;
+      out.x = stackX(out.y, minX, maxX, input);
       break;
     case 'below':
-      out.x = clamp(body.x - dialog.w / 2, minX, maxX);
       out.y = body.y + body.r + BODY_GAP;
+      out.x = stackX(out.y, minX, maxX, input);
       break;
   }
   return out;
