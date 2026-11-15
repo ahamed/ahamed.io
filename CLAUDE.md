@@ -42,7 +42,7 @@ TypeScript is pinned to `6.0.3`. Do not upgrade to TS 7 until typescript-eslint'
 ## Git branches
 
 - **`dev` is the working branch.** Commit to `dev` (or to a short-lived branch merged into `dev`) and push to `origin dev`. Open pull requests against `dev`.
-- **Never commit to or push to `main` directly.** A push to `main` triggers the deployment workflow. Changes reach `main` only when the user explicitly asks to merge `dev` into it.
+- **Never commit to or push to `main` directly.** A push to `main` triggers the deployment workflow. The user merges `dev` into `main` manually; do not merge into `main`.
 
 ## Architecture
 
