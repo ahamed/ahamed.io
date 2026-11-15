@@ -5,6 +5,7 @@ import {
   Material,
   Mesh,
   MeshStandardMaterial,
+  Points,
   Texture,
   type Scene,
   type Object3D,
@@ -13,6 +14,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { STOPS } from '../../content/journey';
 import { buildRoute } from '../../journey/route';
 import { Bodies } from '../bodies/Bodies';
+import { thrusterLink } from '../../audio/thrusterLink';
+import { pulseTime } from './motion';
 import { VOYAGER_ORIENTATION, VOYAGER_SCALE } from './orientation';
 import { PARTS, REQUIRED_PARTS } from './parts';
 import { Voyager } from './Voyager';
@@ -63,6 +66,13 @@ describe('Voyager', () => {
     expect(all.length).toBeGreaterThan(0);
     expect(all.length).toBeLessThanOrEqual(14);
     expect(attitude.getObjectByName('static:dish')).toBeInstanceOf(Mesh);
+    // Thruster puffs ride with the craft, in one extra draw call: 12 buckets + 1 = 13 of 14.
+    expect(attitude.getObjectByName('thruster-puffs')).toBeInstanceOf(Points);
+    let drawn = 0;
+    scene.traverse((o) => {
+      if (o instanceof Mesh || o instanceof Points) drawn++;
+    });
+    expect(drawn).toBe(13);
     await renderer.unmount();
   });
 
@@ -101,6 +111,34 @@ describe('Voyager', () => {
       await renderer.unmount();
     },
   );
+
+  it('signals each new thruster pulse once, and none from before it mounted', async () => {
+    stubReducedMotion(false);
+    const fire = vi.fn();
+    thrusterLink.fire = fire;
+    const renderer = await ReactThreeTestRenderer.create(<Voyager />);
+    // Up to just past the third pulse: pulses 0, 1 and 2 each fire once.
+    const until = pulseTime(2) + 0.05;
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(Math.ceil(until / 0.05), 0.05);
+    });
+    expect(fire).toHaveBeenCalledTimes(3);
+    await renderer.unmount();
+    thrusterLink.fire = () => undefined;
+  });
+
+  it('fires no thruster under reduced motion', async () => {
+    stubReducedMotion(true);
+    const fire = vi.fn();
+    thrusterLink.fire = fire;
+    const renderer = await ReactThreeTestRenderer.create(<Voyager />);
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(Math.ceil(pulseTime(3) / 0.1), 0.1);
+    });
+    expect(fire).not.toHaveBeenCalled();
+    await renderer.unmount();
+    thrusterLink.fire = () => undefined;
+  });
 
   it('holds the neutral pose under reduced motion', async () => {
     stubReducedMotion(true);
