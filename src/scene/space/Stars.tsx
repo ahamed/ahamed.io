@@ -3,6 +3,8 @@ import { useEffect, useMemo } from 'react';
 import { AdditiveBlending, BufferAttribute, BufferGeometry, ShaderMaterial } from 'three';
 import { starsFragment, starsVertex } from '../shaders/stars';
 import { SKY_ORDER, SKY_RADIUS } from './layout';
+import { drawCount, type Tier } from '../quality/profile';
+import { useQualityProfile } from '../quality/useQualityProfile';
 import { createStarField } from './starField';
 import { useShaderClock } from './useShaderClock';
 
@@ -38,6 +40,10 @@ function createStars() {
     advance: (dt: number) => {
       uniforms.uTime.value += dt;
     },
+    /** Draws a share of the stars; the buffer keeps every star. */
+    setFraction: (fraction: number) => {
+      geometry.setDrawRange(0, drawCount(STAR_COUNT, fraction));
+    },
     setPixelRatio: (dpr: number) => {
       uniforms.uPixelRatio.value = dpr;
     },
@@ -49,10 +55,14 @@ function createStars() {
 }
 
 /** Seeded point stars just inside the sky sphere; sharp at any DPR, twinkling slightly. */
-export function Stars() {
+export function Stars({ tier }: { tier?: Tier }) {
   const dpr = useThree((s) => s.viewport.dpr);
   const stars = useMemo(() => createStars(), []);
+  const { starFraction } = useQualityProfile(tier);
 
+  useEffect(() => {
+    stars.setFraction(starFraction);
+  }, [stars, starFraction]);
   useEffect(() => {
     stars.setPixelRatio(dpr);
   }, [stars, dpr]);

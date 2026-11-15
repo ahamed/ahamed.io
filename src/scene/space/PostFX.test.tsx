@@ -3,6 +3,7 @@ import { ToneMappingMode } from 'postprocessing';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stubReducedMotion } from '../../test/reducedMotion';
+import type { Tier } from '../quality/profile';
 import { PostFX } from './PostFX';
 
 /** Effects in the order the composer received them, with their props. */
@@ -35,8 +36,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function render() {
-  const renderer = await ReactThreeTestRenderer.create(<PostFX />);
+async function render(tier: Tier = 'high') {
+  const renderer = await ReactThreeTestRenderer.create(<PostFX tier={tier} />);
   const names = effects.map((e) => e.name);
   const props = (name: string) => effects.find((e) => e.name === name)?.props ?? {};
   return { renderer, names, props };
@@ -67,6 +68,23 @@ describe('PostFX', () => {
     stubReducedMotion(true);
     const { renderer, names } = await render();
     expect(names).toEqual(['Bloom', 'Vignette', 'ToneMapping']);
+    await renderer.unmount();
+  });
+
+  it('halves the bloom resolution and uses 2× multisampling at medium', async () => {
+    stubReducedMotion(false);
+    const { renderer, names, props } = await render('medium');
+    expect(names).toEqual(['Bloom', 'Vignette', 'Noise', 'ToneMapping']);
+    expect(props('Bloom').resolutionScale).toBe(0.5);
+    expect(composerProps.multisampling).toBe(2);
+    await renderer.unmount();
+  });
+
+  it('keeps only the vignette and tone mapping, without multisampling, at low', async () => {
+    stubReducedMotion(false);
+    const { renderer, names } = await render('low');
+    expect(names).toEqual(['Vignette', 'ToneMapping']);
+    expect(composerProps.multisampling).toBe(0);
     await renderer.unmount();
   });
 });

@@ -5,16 +5,26 @@
 Planet, ring and sky textures by [Solar System Scope](https://www.solarsystemscope.com/textures/), licensed under
 [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
 
-| File                        | Source map                                   |
-| --------------------------- | -------------------------------------------- |
-| `2k_earth_daymap.ktx2`      | Earth day map (2K)                           |
-| `2k_earth_clouds.ktx2`      | Earth clouds (2K)                            |
-| `2k_moon.ktx2`              | Moon (2K)                                    |
-| `2k_mars.ktx2`              | Mars (2K)                                    |
-| `2k_jupiter.ktx2`           | Jupiter (2K)                                 |
-| `2k_saturn.ktx2`            | Saturn (2K)                                  |
-| `2k_saturn_ring_alpha.ktx2` | Saturn ring alpha (2K), resampled to 2048×16 |
-| `2k_stars_milky_way.ktx2`   | Stars + Milky Way (2K)                       |
+| File                        | Source map                                    |
+| --------------------------- | --------------------------------------------- |
+| `2k_earth_daymap.ktx2`      | Earth day map (2K)                            |
+| `2k_earth_clouds.ktx2`      | Earth clouds (2K)                             |
+| `2k_moon.ktx2`              | Moon (2K)                                     |
+| `2k_mars.ktx2`              | Mars (2K)                                     |
+| `2k_jupiter.ktx2`           | Jupiter (2K)                                  |
+| `2k_saturn.ktx2`            | Saturn (2K)                                   |
+| `2k_saturn_ring_alpha.ktx2` | Saturn ring alpha (2K), resampled to 2048×16  |
+| `2k_stars_milky_way.ktx2`   | Stars + Milky Way (2K)                        |
+| `1k_earth_daymap.ktx2`      | Earth day map (2K), resampled to 1024×512     |
+| `1k_earth_clouds.ktx2`      | Earth clouds (2K), resampled to 1024×512      |
+| `1k_moon.ktx2`              | Moon (2K), resampled to 1024×512              |
+| `1k_mars.ktx2`              | Mars (2K), resampled to 1024×512              |
+| `1k_jupiter.ktx2`           | Jupiter (2K), resampled to 1024×512           |
+| `1k_saturn.ktx2`            | Saturn (2K), resampled to 1024×512            |
+| `1k_saturn_ring_alpha.ktx2` | Saturn ring alpha (2K), resampled to 1024×16  |
+| `1k_stars_milky_way.ktx2`   | Stars + Milky Way (2K), resampled to 1024×512 |
+
+The `1k_` versions above are lighter copies for phones and the low quality tier.
 
 ## U.S. Geological Survey (public domain)
 

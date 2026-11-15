@@ -27,7 +27,9 @@ const USGS = [
   'pluto',
   'charon',
 ].map((moon) => `1k_${moon}`);
-const KTX2 = [...SOLAR_SYSTEM_SCOPE, ...USGS];
+/** Half-size versions of the 2K maps, for phones and the low quality tier. */
+const ONE_K = SOLAR_SYSTEM_SCOPE.map((name) => name.replace('2k_', '1k_'));
+const KTX2 = [...SOLAR_SYSTEM_SCOPE, ...USGS, ...ONE_K];
 
 test.describe('shipped textures', () => {
   test('every planet and sky texture ships as KTX2, and no source JPG ships', () => {

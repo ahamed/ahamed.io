@@ -10,6 +10,8 @@ import { createHash } from 'node:crypto';
  * @property {'etc1s' | 'uastc'} [encode] Basis codec; ETC1S unless the result shows blocks.
  * @property {'jpg' | 'png'} [ext] Source file extension; `jpg` unless the source has alpha.
  * @property {string} [resize] Output size `WxH`, when the source should be resampled.
+ * @property {string} [from] Source base name, when the output is built from another texture's
+ *                           source (the 1K maps are resampled from the 2K sources).
  */
 
 /**
@@ -40,13 +42,28 @@ export const TEXTURES = [
   { name: '1k_enceladus', transfer: 'srgb' },
   { name: '1k_pluto', transfer: 'srgb' },
   { name: '1k_charon', transfer: 'srgb' },
+  // Half-size versions of the 2K maps, from the same sources, for phones and the low quality tier.
+  { name: '1k_earth_daymap', from: '2k_earth_daymap', transfer: 'srgb', resize: '1024x512' },
+  { name: '1k_earth_clouds', from: '2k_earth_clouds', transfer: 'linear', resize: '1024x512' },
+  { name: '1k_moon', from: '2k_moon', transfer: 'srgb', resize: '1024x512' },
+  { name: '1k_stars_milky_way', from: '2k_stars_milky_way', transfer: 'srgb', resize: '1024x512' },
+  { name: '1k_mars', from: '2k_mars', transfer: 'srgb', resize: '1024x512' },
+  { name: '1k_jupiter', from: '2k_jupiter', transfer: 'srgb', resize: '1024x512' },
+  { name: '1k_saturn', from: '2k_saturn', transfer: 'srgb', resize: '1024x512' },
+  {
+    name: '1k_saturn_ring_alpha',
+    from: '2k_saturn_ring_alpha',
+    transfer: 'srgb',
+    ext: 'png',
+    resize: '1024x16',
+  },
 ];
 
 /**
  * Source file name in assets/textures/.
  * @param {TextureEntry} entry
  */
-export const sourceFile = (entry) => `${entry.name}.${entry.ext ?? 'jpg'}`;
+export const sourceFile = (entry) => `${entry.from ?? entry.name}.${entry.ext ?? 'jpg'}`;
 
 /**
  * toktx arguments for one texture: KTX2 with generated mipmaps, Basis-compressed.

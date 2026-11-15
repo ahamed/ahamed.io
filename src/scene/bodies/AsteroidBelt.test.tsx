@@ -125,3 +125,28 @@ describe('AsteroidBelt draw distance', () => {
     expect(await beltVisible({ ...options, zStart: -50_000, zEnd: -60_000 })).toBe(false);
   });
 });
+
+describe('AsteroidBelt quality', () => {
+  const drawn = (meshes: InstancedMesh[]) => meshes.reduce((n, m) => n + m.count, 0);
+
+  it('draws about a third of the rocks at the low tier, keeping the full buffers', async () => {
+    stubReducedMotion(false);
+    const renderer = await ReactThreeTestRenderer.create(
+      <AsteroidBelt options={options} tier="low" />,
+    );
+    const meshes = instanced(renderer.scene.instance);
+    expect(drawn(meshes) / options.count).toBeCloseTo(0.35, 1);
+    const capacity = meshes.reduce((n, m) => n + m.instanceMatrix.count, 0);
+    expect(capacity).toBe(options.count);
+    await renderer.unmount();
+  });
+
+  it('draws every rock at the high tier', async () => {
+    stubReducedMotion(false);
+    const renderer = await ReactThreeTestRenderer.create(
+      <AsteroidBelt options={options} tier="high" />,
+    );
+    expect(drawn(instanced(renderer.scene.instance))).toBe(options.count);
+    await renderer.unmount();
+  });
+});

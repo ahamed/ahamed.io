@@ -91,3 +91,18 @@ describe('DeepSky', () => {
     }
   });
 });
+
+describe('DeepSky quality', () => {
+  it('thins every galaxy evenly at the low tier', async () => {
+    const renderer = await ReactThreeTestRenderer.create(
+      <>
+        <CameraAt z={layout.zStop} />
+        <DeepSky route={route} tier="low" />
+      </>,
+    );
+    const galaxies = renderer.scene.instance.getObjectByName('galaxies') as Points;
+    const total = GALAXIES.reduce((n, g) => n + g.options.count, 0);
+    expect(galaxies.geometry.drawRange.count).toBe(Math.round(total * 0.5));
+    await renderer.unmount();
+  });
+});

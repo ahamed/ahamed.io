@@ -68,3 +68,13 @@ describe('Stars', () => {
     expect(materialSpy.mock.contexts).toContain(material);
   });
 });
+
+describe('Stars quality', () => {
+  it('keeps 60% of the stars, several thousand, at the low tier', async () => {
+    const renderer = await ReactThreeTestRenderer.create(<Stars tier="low" />);
+    const points = renderer.scene.instance.getObjectByName('stars') as Points;
+    expect(points.geometry.drawRange.count).toBe(Math.round(STAR_COUNT * 0.6));
+    expect(points.geometry.getAttribute('position').count).toBe(STAR_COUNT);
+    await renderer.unmount();
+  });
+});

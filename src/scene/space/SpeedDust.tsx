@@ -10,6 +10,8 @@ import {
 import { journeyRuntime } from '../../store/journey';
 import { dustFragment, dustVertex } from '../shaders/dust';
 import { useReducedMotion } from '../useReducedMotion';
+import { drawCount, type Tier } from '../quality/profile';
+import { useQualityProfile } from '../quality/useQualityProfile';
 import { createDust, dustResponse } from './dust';
 
 export const DUST_COUNT = 1500;
@@ -55,6 +57,10 @@ function createSpeedDust() {
 
   return {
     lines,
+    /** Draws a share of the streaks (two vertices each); the buffer keeps them all. */
+    setFraction: (fraction: number) => {
+      geometry.setDrawRange(0, drawCount(DUST_COUNT, fraction) * 2);
+    },
     update: (speed: number) => {
       const { opacity, stretch } = dustResponse(speed);
       uniforms.uOpacity.value = opacity;
@@ -68,8 +74,12 @@ function createSpeedDust() {
   };
 }
 
-function DustLines() {
+function DustLines({ tier }: { tier?: Tier }) {
   const dust = useMemo(() => createSpeedDust(), []);
+  const { dustFraction } = useQualityProfile(tier);
+  useEffect(() => {
+    dust.setFraction(dustFraction);
+  }, [dust, dustFraction]);
   useEffect(() => dust.dispose, [dust]);
   useFrame(() => {
     dust.update(journeyRuntime.speed);
@@ -78,6 +88,6 @@ function DustLines() {
 }
 
 /** Faint streaks around the camera that grow with travel speed; hidden under reduced motion. */
-export function SpeedDust() {
-  return useReducedMotion() ? null : <DustLines />;
+export function SpeedDust({ tier }: { tier?: Tier }) {
+  return useReducedMotion() ? null : <DustLines tier={tier} />;
 }

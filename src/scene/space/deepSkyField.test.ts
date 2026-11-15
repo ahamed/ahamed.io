@@ -85,4 +85,28 @@ describe('deep-sky presets', () => {
       expect(positions[i * 3 + 2]).toBeLessThan(zStop - 1000);
     }
   });
+
+  it('interleaves the galaxies, so any prefix samples every galaxy evenly', () => {
+    const { positions } = galaxyCloud(zStop);
+    const nearest = (i: number) => {
+      let best = 0;
+      let bestDistance = Infinity;
+      GALAXIES.forEach(({ offset }, g) => {
+        const d = Math.hypot(
+          (positions[i * 3] ?? 0) - offset[0],
+          (positions[i * 3 + 1] ?? 0) - offset[1],
+          (positions[i * 3 + 2] ?? 0) - (zStop + offset[2]),
+        );
+        if (d < bestDistance) {
+          bestDistance = d;
+          best = g;
+        }
+      });
+      return best;
+    };
+    const counts = GALAXIES.map(() => 0);
+    const prefix = 400;
+    for (let i = 0; i < prefix; i++) counts[nearest(i)] = (counts[nearest(i)] ?? 0) + 1;
+    for (const count of counts) expect(count).toBeCloseTo(prefix / GALAXIES.length, -1);
+  });
 });

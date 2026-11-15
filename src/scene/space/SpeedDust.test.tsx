@@ -87,3 +87,13 @@ describe('SpeedDust', () => {
     expect(materialSpy.mock.contexts).toContain(lines.material);
   });
 });
+
+describe('SpeedDust quality', () => {
+  it('draws about a third of the streaks at the low tier', async () => {
+    stubReducedMotion(false);
+    const renderer = await ReactThreeTestRenderer.create(<SpeedDust tier="low" />);
+    const lines = renderer.scene.instance.getObjectByName('speed-dust') as LineSegments;
+    expect(lines.geometry.drawRange.count).toBe(Math.round(DUST_COUNT * 0.35) * 2);
+    await renderer.unmount();
+  });
+});

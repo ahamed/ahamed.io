@@ -112,10 +112,9 @@ export const GALAXIES: readonly GalaxyPreset[] = [
 /** Every galaxy's stars in world space, merged so they draw in one call. */
 export function galaxyCloud(zStop: number) {
   const total = GALAXIES.reduce((n, g) => n + g.options.count, 0);
-  const positions = new Float32Array(total * 3);
-  const colors = new Float32Array(total * 3);
-  let at = 0;
-  for (const { seed, options, offset, tilt } of GALAXIES) {
+  // Each galaxy in world space first, then interleaved (star i of every galaxy in turn), so
+  // drawing any prefix of the cloud thins every galaxy evenly (lighter quality tiers).
+  const placed = GALAXIES.map(({ seed, options, offset, tilt }) => {
     const stars = galaxyStars(seed, options);
     const [cx, sx, cy, sy] = [
       Math.cos(tilt[0]),
@@ -123,6 +122,7 @@ export function galaxyCloud(zStop: number) {
       Math.cos(tilt[1]),
       Math.sin(tilt[1]),
     ];
+    const world = new Float32Array(options.count * 3);
     for (let i = 0; i < options.count; i++) {
       const x = stars.positions[i * 3] ?? 0;
       const y0 = stars.positions[i * 3 + 1] ?? 0;
@@ -132,10 +132,21 @@ export function galaxyCloud(zStop: number) {
       const z1 = y0 * sx + z0 * cx;
       const x2 = x * cy + z1 * sy;
       const z2 = -x * sy + z1 * cy;
-      positions[at * 3] = offset[0] + x2;
-      positions[at * 3 + 1] = offset[1] + y;
-      positions[at * 3 + 2] = zStop + offset[2] + z2;
-      colors.set(stars.colors.subarray(i * 3, i * 3 + 3), at * 3);
+      world[i * 3] = offset[0] + x2;
+      world[i * 3 + 1] = offset[1] + y;
+      world[i * 3 + 2] = zStop + offset[2] + z2;
+    }
+    return { count: options.count, world, colors: stars.colors };
+  });
+  const positions = new Float32Array(total * 3);
+  const colors = new Float32Array(total * 3);
+  const longest = Math.max(...placed.map((g) => g.count));
+  let at = 0;
+  for (let i = 0; i < longest; i++) {
+    for (const galaxy of placed) {
+      if (i >= galaxy.count) continue;
+      positions.set(galaxy.world.subarray(i * 3, i * 3 + 3), at * 3);
+      colors.set(galaxy.colors.subarray(i * 3, i * 3 + 3), at * 3);
       at++;
     }
   }

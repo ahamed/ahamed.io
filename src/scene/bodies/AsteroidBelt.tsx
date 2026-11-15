@@ -1,5 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
+import { drawCount, type Tier } from '../quality/profile';
+import { useQualityProfile } from '../quality/useQualityProfile';
 import {
   type Group,
   InstancedBufferAttribute,
@@ -87,6 +89,10 @@ function createBeltMeshes(options: BeltOptions, color: string, name: string) {
 
   return {
     meshes,
+    /** Draws a share of each shape's rocks; the buffers keep every rock. */
+    setFraction: (fraction: number) => {
+      for (const mesh of meshes) mesh.count = drawCount(mesh.instanceMatrix.count, fraction);
+    },
     advance: (dt: number) => {
       uTime.value += dt;
     },
@@ -109,14 +115,21 @@ export function AsteroidBelt({
   options,
   color = ROCK_COLOR,
   name = 'asteroid-belt',
+  tier,
 }: {
   options: BeltOptions;
+  /** Overrides the current quality tier (tests). */
+  tier?: Tier;
   /** Base rock colour (sRGB). */
   color?: string;
   name?: string;
 }) {
   const belt = useMemo(() => createBeltMeshes(options, color, name), [options, color, name]);
   useEffect(() => belt.dispose, [belt]);
+  const { beltFraction } = useQualityProfile(tier);
+  useEffect(() => {
+    belt.setFraction(beltFraction);
+  }, [belt, beltFraction]);
   useShaderClock(belt.advance);
   const groupRef = useRef<Group>(null);
   // Hide the whole belt (all its draw calls) while the camera is far from its span.

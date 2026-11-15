@@ -13,6 +13,8 @@ import {
   ShaderMaterial,
 } from 'three';
 import type { Route } from '../../journey/route';
+import { drawCount, type Tier } from '../quality/profile';
+import { useQualityProfile } from '../quality/useQualityProfile';
 import { noise3Glsl } from '../shaders/noise';
 import { galaxyCloud, NEBULAE } from './deepSkyField';
 import { deepSkyFade, heliopauseLayout } from './heliosphere';
@@ -145,6 +147,12 @@ function createGalaxies(zStop: number, uFade: { value: number }, uScale: { value
   return points;
 }
 
+/** Draws a share of the galaxy stars; the cloud is interleaved, so every galaxy thins evenly. */
+function setGalaxyFraction(galaxies: Points, fraction: number) {
+  const total = galaxies.geometry.getAttribute('position').count;
+  galaxies.geometry.setDrawRange(0, drawCount(total, fraction));
+}
+
 function createDeepSky(route: Route) {
   const layout = heliopauseLayout(route);
   const uFade = { value: 0 };
@@ -168,6 +176,9 @@ function createDeepSky(route: Route) {
       group.visible = visible;
       uScale.value = bufferHeight / 2 / Math.tan(fovY / 2);
     },
+    setFraction: (fraction: number) => {
+      setGalaxyFraction(galaxies, fraction);
+    },
     dispose: () => {
       for (const part of [nebula, galaxies]) {
         part.geometry.dispose();
@@ -182,9 +193,13 @@ function createDeepSky(route: Route) {
  * the Solar System, they fade in as Voyager crosses the heliopause and are fully shown by the
  * heliopause stop. They sit in the world, so they shift slowly as Voyager moves.
  */
-export function DeepSky({ route }: { route: Route }) {
+export function DeepSky({ route, tier }: { route: Route; tier?: Tier }) {
   const deepSky = useMemo(() => createDeepSky(route), [route]);
   useEffect(() => deepSky.dispose, [deepSky]);
+  const { deepSkyFraction } = useQualityProfile(tier);
+  useEffect(() => {
+    deepSky.setFraction(deepSkyFraction);
+  }, [deepSky, deepSkyFraction]);
   useFrame(({ camera, size, viewport, gl }) => {
     const fovY = camera instanceof PerspectiveCamera ? MathUtils.degToRad(camera.fov) : Math.PI / 4;
     deepSky.update(camera.position.z, size.height * viewport.dpr, fovY, gl.domElement);

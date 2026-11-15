@@ -22,13 +22,21 @@ describe('TEXTURES manifest', () => {
     expect(TEXTURES.map((e) => e.name).sort()).toEqual([
       '1k_callisto',
       '1k_charon',
+      '1k_earth_clouds',
+      '1k_earth_daymap',
       '1k_enceladus',
       '1k_europa',
       '1k_ganymede',
       '1k_iapetus',
       '1k_io',
+      '1k_jupiter',
+      '1k_mars',
+      '1k_moon',
       '1k_pluto',
       '1k_rhea',
+      '1k_saturn',
+      '1k_saturn_ring_alpha',
+      '1k_stars_milky_way',
       '1k_titan',
       '2k_earth_clouds',
       '2k_earth_daymap',
@@ -58,6 +66,19 @@ describe('TEXTURES manifest', () => {
     expect(sourceFile(byName('2k_jupiter'))).toBe('2k_jupiter.jpg');
     expect(sourceFile(byName('1k_io'))).toBe('1k_io.jpg');
     expect(sourceFile(byName('2k_saturn_ring_alpha'))).toBe('2k_saturn_ring_alpha.png');
+  });
+
+  it('builds a 1K version of every 2K map from the same source, at half size', () => {
+    for (const big of TEXTURES.filter((e) => e.name.startsWith('2k_'))) {
+      const small = TEXTURES.find((e) => e.name === big.name.replace('2k_', '1k_'));
+      if (!small) throw new Error(`no 1K version of ${big.name}`);
+      expect(sourceFile(small)).toBe(sourceFile(big));
+      expect(small.transfer).toBe(big.transfer);
+      const [w, h] = (big.resize ?? '2048x1024').split('x').map(Number);
+      expect(small.resize).toBe(
+        `${String((w ?? 0) / 2)}x${String(big.resize ? (h ?? 0) : (h ?? 0) / 2)}`,
+      );
+    }
   });
 });
 
