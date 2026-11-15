@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { type Group, type Mesh, MeshStandardMaterial, RepeatWrapping, type Texture } from 'three';
+import { type Group, MeshStandardMaterial, RepeatWrapping, type Texture } from 'three';
 import { useKtx2 } from '../ktx2';
 import { useShaderClock } from '../space/useShaderClock';
 import { bandOffsetGlsl } from './bands';
+import { Spinning } from './Spinning';
 import { useDrawDistance } from './useDrawDistance';
 
 /** Axial tilt (rad): 3.1°. */
 const TILT = 0.054;
-/** Visible spin (rad/s); far slower than the real 10-hour day, so the bands stay readable. */
-const SPIN = 0.01;
 
 /** The map lookup, shifted per latitude band; derivatives come from the unshifted UV. */
 const BAND_MAP_FRAGMENT = /* glsl */ `
@@ -40,10 +39,9 @@ function createJupiter(map: Texture) {
   material.customProgramCacheKey = () => 'jupiter-bands';
   return {
     material,
-    /** Advances the band drift and spins `surface` by `dt` seconds. */
-    advance(dt: number, surface: Mesh | null) {
+    /** Advances the band drift by `dt` seconds. */
+    advance(dt: number) {
       uTime.value += dt;
-      if (surface) surface.rotation.y += SPIN * dt;
     },
     dispose: () => {
       material.dispose();
@@ -61,15 +59,16 @@ export function Jupiter({ radius }: { radius: number }) {
   useEffect(() => jupiter?.dispose, [jupiter]);
 
   const root = useRef<Group>(null);
-  const surface = useRef<Mesh>(null);
   useDrawDistance(root, radius);
-  useShaderClock((dt) => jupiter?.advance(dt, surface.current));
+  useShaderClock((dt) => jupiter?.advance(dt));
 
   return (
     <group name="jupiter" ref={root} rotation={[TILT, 0, 0]}>
-      <mesh name="jupiter-surface" ref={surface} material={jupiter?.material}>
-        <sphereGeometry args={[radius, 128, 64]} />
-      </mesh>
+      <Spinning spin="jupiter">
+        <mesh name="jupiter-surface" material={jupiter?.material}>
+          <sphereGeometry args={[radius, 128, 64]} />
+        </mesh>
+      </Spinning>
     </group>
   );
 }

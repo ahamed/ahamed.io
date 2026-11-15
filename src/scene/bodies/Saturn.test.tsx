@@ -120,9 +120,9 @@ describe('Saturn', () => {
     stubReducedMotion(true);
     const renderer = await ReactThreeTestRenderer.create(<Saturn radius={R} />);
     const surface = byName(renderer, 'saturn-surface');
-    const spin = surface.rotation.y;
     await advance(renderer, 10);
-    expect(surface.rotation.y).toBe(spin);
+    expect(surface.parent?.name).toBe('spin-saturn');
+    expect(surface.parent?.quaternion.toArray()).toEqual([0, 0, 0, 1]);
     await renderer.unmount();
   });
 

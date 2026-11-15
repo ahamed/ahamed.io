@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef } from 'react';
 import {
   DoubleSide,
   type Group,
-  type Mesh,
   MeshStandardMaterial,
   Quaternion,
   RingGeometry,
@@ -14,14 +13,12 @@ import {
 import { RING_INNER, RING_OUTER } from '../../journey/route';
 import { useKtx2 } from '../ktx2';
 import { SUN_DIRECTION } from '../space/sunDirection';
-import { useShaderClock } from '../space/useShaderClock';
 import { ringShadowGlsl } from './ringShadow';
+import { Spinning } from './Spinning';
 import { useDrawDistance } from './useDrawDistance';
 
 /** Saturn's axial tilt (26.7°), leaning the ring plane toward the approaching camera (+Z). */
 const TILT = (26.7 * Math.PI) / 180;
-/** Visible spin (rad/s). The rings are symmetric about the axis, so only the planet spins. */
-const SPIN = 0.008;
 /** Brightness left in the planet's shadow on the rings. */
 const RING_IN_SHADOW = 0.12;
 
@@ -112,10 +109,6 @@ function createSaturn(planetMap: Texture, strip: Texture, radius: number) {
       root.getWorldPosition(uniforms.uCentre.value);
       uniforms.uNormal.value.set(0, 1, 0).applyQuaternion(tilted.getWorldQuaternion(quaternion));
     },
-    /** Spins the planet (not the rings) by `dt` seconds. */
-    advance(dt: number, surface: Mesh | null) {
-      if (surface) surface.rotation.y += SPIN * dt;
-    },
     dispose: () => {
       surfaceMaterial.dispose();
       ringGeometry.dispose();
@@ -139,9 +132,7 @@ export function Saturn({ radius }: { radius: number }) {
 
   const root = useRef<Group>(null);
   const tilted = useRef<Group>(null);
-  const surface = useRef<Mesh>(null);
   useDrawDistance(root, radius * RING_OUTER);
-  useShaderClock((dt) => saturn?.advance(dt, surface.current));
   useFrame(() => {
     if (saturn && root.current && tilted.current) saturn.update(root.current, tilted.current);
   });
@@ -149,9 +140,12 @@ export function Saturn({ radius }: { radius: number }) {
   return (
     <group name="saturn" ref={root}>
       <group ref={tilted} rotation={[TILT, 0, 0]}>
-        <mesh name="saturn-surface" ref={surface} material={saturn?.surfaceMaterial}>
-          <sphereGeometry args={[radius, 128, 64]} />
-        </mesh>
+        {/* The rings are symmetric about the axis, so only the planet spins. */}
+        <Spinning spin="saturn">
+          <mesh name="saturn-surface" material={saturn?.surfaceMaterial}>
+            <sphereGeometry args={[radius, 128, 64]} />
+          </mesh>
+        </Spinning>
         <mesh
           name="saturn-rings"
           geometry={saturn?.ringGeometry}

@@ -30,8 +30,8 @@ const NEW_HORIZONS_VIEW = { yaw: -Math.PI / 2, pitch: 1.0 };
 
 /**
  * The textured moons and dwarf planets. Io and Ganymede use colour mosaics, so they stay
- * untinted; the others are greyscale mosaics tinted toward their true colour. All are tidally
- * locked or seen briefly, so they do not spin.
+ * untinted; the others are greyscale mosaics tinted toward their true colour. Each spins about
+ * its pole (see `spin.ts`); `yaw` and `pitch` set its resting pose.
  */
 export const MOON_PRESETS: Record<MoonPresetId, MoonPreset> = {
   io: { tint: '#ffffff', roughness: 0.9 },

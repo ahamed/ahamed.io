@@ -186,7 +186,7 @@ export function Comet({ variant, radius }: { variant: CometVariant; radius: numb
 
   return (
     <group name="comet" ref={root}>
-      <Rock preset="comet-nucleus" radius={radius} />
+      <Rock preset="comet-nucleus" radius={radius} spin="comet-nucleus" />
       <primitive object={comet.coma} />
       {comet.tails.map((tail) => (
         <primitive key={tail.name} object={tail} />

@@ -79,10 +79,10 @@ describe('Jupiter', () => {
     const renderer = await ReactThreeTestRenderer.create(<Jupiter radius={16} />);
     const surface = surfaceOf(renderer);
     const shader = compileUniforms(surface.material as MeshStandardMaterial);
-    const spin = surface.rotation.y;
     await advance(renderer, 10);
     expect(shader.uniforms.uTime?.value).toBe(0);
-    expect(surface.rotation.y).toBe(spin);
+    expect(surface.parent?.name).toBe('spin-jupiter');
+    expect(surface.parent?.quaternion.toArray()).toEqual([0, 0, 0, 1]);
     await renderer.unmount();
   });
 
