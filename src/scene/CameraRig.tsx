@@ -9,7 +9,7 @@ import {
   finaleSnap,
   finaleTurn,
 } from '../journey/finale';
-import { flyBackDone, flyBackTarget } from '../journey/flyBack';
+import { flightDone, flightTarget } from '../journey/flyTo';
 import { introPoseInto, introProgress, introStartPose } from '../journey/intro';
 import { damp } from '../journey/progress';
 import {
@@ -66,11 +66,13 @@ export function CameraRig({ route, store, voyager, sky }: Props) {
     const state = store.getState();
     const now = performance.now();
 
-    // "Back to Earth": the rewind moves the target itself, and counts as input so nothing snaps.
+    // A flight (Back to Earth or a map jump) moves the target itself, and counts as input so
+    // nothing snaps.
     if (state.flight) {
-      const elapsed = now - state.flight.startAt;
-      state.flyTo(flyBackTarget(state.flight.from, elapsed), now);
-      if (flyBackDone(elapsed)) state.endFlight();
+      const { from, to, startAt, duration } = state.flight;
+      const elapsed = now - startAt;
+      state.flyTo(flightTarget(from, to, elapsed, duration), now);
+      if (flightDone(elapsed, duration)) state.endFlight();
     }
 
     const idleMs = now - store.getState().lastInputAt;

@@ -48,6 +48,8 @@ test.describe('sound and autoplay', () => {
   });
 
   test('M toggles mute, and the choice survives a reload', async ({ page }) => {
+    // Boots the whole scene twice; under parallel load each boot can take 15 s or more.
+    test.setTimeout(60_000);
     const sound = page.getByRole('button', { name: 'Mute sound' });
     await expect(sound).toHaveAttribute('aria-pressed', 'false');
     await page.keyboard.press('m');

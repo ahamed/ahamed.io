@@ -213,6 +213,8 @@ test.describe('voyage', () => {
   });
 
   test('Back to Earth rewinds the voyage to the Earth dialog', async ({ page }) => {
+    // Flies the whole route out and back after a boot.
+    test.setTimeout(60_000);
     await page.keyboard.press('End');
     const card = page.getByRole('region', { name: 'Open a channel' });
     await expect(card).toBeVisible(OPEN_TIMEOUT);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { flightMs } from '../journey/flyTo';
 import { createJourneyStore, journeyRuntime, type KeyValueStorage } from './journey';
 
 const make = () => createJourneyStore([0, 0.8], { phase: 'voyage', storage: null });
@@ -66,7 +67,7 @@ describe('journey store', () => {
     const store = make();
     store.getState().goToEnd(100);
     store.getState().flyBack(500, false);
-    expect(store.getState().flight).toEqual({ from: 1, startAt: 500 });
+    expect(store.getState().flight).toEqual({ from: 1, to: 0, startAt: 500, duration: 4000 });
     expect(store.getState().target).toBe(1);
   });
 
@@ -279,6 +280,62 @@ describe('journey store', () => {
       const store = createJourneyStore([0, 0.8]);
       store.getState().toggleAutoplay();
       expect(store.getState().autoplay).toBe(false);
+    });
+  });
+
+  describe('map flights', () => {
+    const three = () => createJourneyStore([0, 0.3, 0.8], { phase: 'voyage', storage: null });
+
+    it('flies to a stop from the current target, longer for longer jumps', () => {
+      const store = three();
+      store.getState().flyToStop(2, 100, false);
+      expect(store.getState().flight).toEqual({
+        from: 0,
+        to: 0.8,
+        startAt: 100,
+        duration: flightMs(0.8),
+      });
+    });
+
+    it('jumps straight there under reduced motion', () => {
+      const store = three();
+      store.getState().flyToStop(1, 100, true);
+      expect(store.getState().flight).toBeNull();
+      expect(store.getState().target).toBe(0.3);
+      expect(journeyRuntime.position).toBe(0.3);
+      journeyRuntime.position = 0;
+    });
+
+    it('counts as manual input: stops autoplay', () => {
+      const store = three();
+      store.getState().toggleAutoplay();
+      store.getState().flyToStop(1, 100, false);
+      expect(store.getState().autoplay).toBe(false);
+    });
+
+    it('is ignored while booting and for an unknown stop', () => {
+      const boot = createJourneyStore([0, 0.3], { storage: null });
+      boot.getState().flyToStop(1, 100, false);
+      expect(boot.getState().flight).toBeNull();
+      const store = three();
+      store.getState().flyToStop(9, 100, false);
+      expect(store.getState().flight).toBeNull();
+    });
+  });
+
+  describe('moves', () => {
+    it('counts every manual move, but not autoplay or snapping', () => {
+      const store = make();
+      store.getState().nudge(0.01, 1);
+      store.getState().step(1, 1);
+      store.getState().goToStop(1, 1);
+      store.getState().goToStart(1);
+      store.getState().goToEnd(1);
+      store.getState().flyToStop(0, 1, false);
+      expect(store.getState().moves).toBe(6);
+      store.getState().snapTo(0.5);
+      store.getState().autoplayTo(0.8, 1);
+      expect(store.getState().moves).toBe(6);
     });
   });
 });

@@ -1,8 +1,8 @@
 .chip {
-  position: fixed;
-  bottom: 1rem;
+  position: absolute;
+  bottom: 3rem;
   left: 1rem;
-  z-index: 5;
+  pointer-events: auto;
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
@@ -33,11 +33,12 @@
   background: color-mix(in srgb, var(--color-accent) 22%, transparent);
 }
 
-/* Phones: the dialog is a bottom sheet, so the chip moves to the top. */
-@media (max-width: 767px) {
+/* Phones: the dialog is a bottom sheet, so the chip sits top-right, under the telemetry line. */
+@media (max-width: 767.98px) {
   .chip {
-    top: 0.75rem;
+    top: 3.1rem;
+    right: 0.75rem;
     bottom: auto;
-    left: 0.75rem;
+    left: auto;
   }
 }

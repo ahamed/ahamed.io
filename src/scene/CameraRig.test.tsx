@@ -397,3 +397,20 @@ describe('CameraRig plasma level', () => {
     await renderer.unmount();
   });
 });
+
+describe('CameraRig map flight', () => {
+  it('flies a map jump to its stop and ends it there', async () => {
+    const store = createJourneyStore(route.closePoints, { phase: 'voyage', storage: null });
+    const renderer = await ReactThreeTestRenderer.create(
+      <CameraRig route={route} store={store} voyager={{ current: null }} />,
+    );
+    const saturn = route.closePoints[14] ?? 0.5;
+    store.getState().flyToStop(14, performance.now() - 10_000, false);
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(1, 1 / 60);
+    });
+    expect(store.getState().target).toBeCloseTo(saturn);
+    expect(store.getState().flight).toBeNull();
+    await renderer.unmount();
+  });
+});

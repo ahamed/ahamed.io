@@ -9,7 +9,7 @@ import { canUseWebGL } from '../scene/webgl';
 import { journeyStore, ROUTE } from '../store/journey';
 import { BootLoader } from '../ui/BootLoader/BootLoader';
 import { FinaleLayer } from '../ui/Finale/FinaleLayer';
-import { StatusChip } from '../ui/StatusChip/StatusChip';
+import { Hud } from '../ui/Hud/Hud';
 import { DialogLayer } from '../ui/TerminalDialog/DialogLayer';
 import styles from './App.module.css';
 import { shouldInspect } from './inspect';
@@ -45,7 +45,7 @@ export function App() {
           </Suspense>
           <DialogLayer stops={STOPS} />
           <FinaleLayer finale={FINALE} store={journeyStore} />
-          <StatusChip store={journeyStore} />
+          <Hud store={journeyStore} stops={STOPS} closePoints={ROUTE.closePoints} />
           <BootLoader tracker={bootTracker.store} store={journeyStore} />
         </>
       ) : (
