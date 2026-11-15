@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useStore, type StoreApi } from 'zustand';
+import { withBase } from '../../app/withBase';
 import { bootLines } from '../../boot/bootLog';
 import type { BootSnapshot } from '../../boot/tracker';
 import { useReducedMotion } from '../../scene/useReducedMotion';
@@ -132,7 +133,11 @@ export function BootLoader({ tracker, store }: Props) {
             </button>
           </div>
         )}
-        <a className={styles.text} href="/?text" data-prominent={reduced ? '' : undefined}>
+        <a
+          className={styles.text}
+          href={withBase('?text')}
+          data-prominent={reduced ? '' : undefined}
+        >
           Read as text
         </a>
       </div>

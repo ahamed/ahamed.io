@@ -7,6 +7,8 @@ const VENDOR_3D =
 
 // https://vite.dev/config/
 export default defineConfig({
+  // `/` on a custom domain; the Pages workflow sets BASE_PATH (e.g. `/ahamed.io/`) for a project site.
+  base: process.env.BASE_PATH ?? '/',
   plugins: [react()],
   // Fixed CSS-module class names, the same in the build and in scripts/prerender.mjs, so the
   // prerendered Text-mode markup matches the built stylesheet.

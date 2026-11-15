@@ -1,3 +1,4 @@
+import { withBase } from '../../app/withBase';
 import { FINALE, STOPS } from '../../content/journey';
 import { TextContent } from './TextContent';
 import styles from './TextMode.module.css';
@@ -16,7 +17,7 @@ export function TextMode({ webglMissing = false }: { webglMissing?: boolean }) {
             version.
           </p>
         ) : (
-          <a href="/">Back to the voyage</a>
+          <a href={withBase('')}>Back to the voyage</a>
         )}
       </div>
       <h1>Sajeeb Ahamed</h1>

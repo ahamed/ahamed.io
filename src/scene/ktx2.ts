@@ -1,13 +1,14 @@
 import { useKTX2 } from '@react-three/drei';
 import type { Texture } from 'three';
+import { withBase } from '../app/withBase';
 import type { TextureSet } from './quality/initialTier';
 import { qualityStore } from './quality/store';
 
 /** Where the Basis Universal transcoder (copied from three) is served. */
-export const BASIS_PATH = '/basis/';
+export const BASIS_PATH = withBase('basis/');
 
 /** URL of a committed KTX2 texture in public/textures/. */
-export const textureUrl = (name: string): string => `/textures/${name}.ktx2`;
+export const textureUrl = (name: string): string => withBase(`textures/${name}.ktx2`);
 
 /** The texture to load for `name` in a set: a `2k_` map becomes its `1k_` version in the 1K set. */
 export const resolveTexture = (name: string, set: TextureSet): string =>
