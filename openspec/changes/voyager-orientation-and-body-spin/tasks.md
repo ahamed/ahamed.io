@@ -57,3 +57,10 @@
   - `prefers-reduced-motion` freezing everything
   - Checked in the browser: Voyager's 3/4 view, Earth turning prograde, Saturn with its rings unspun, Pluto turning slowly (its heart is mid-turn on arrival), Arrokoth turning end over end, and the finale on the dish face. Jupiter and the reduced-motion freeze are covered by unit tests only.
 - [x] 5.4 Make small focused commits on `dev`: Voyager orientation, the spin core and hook, then the bodies.
+
+## 6. Follow-up: dish brightness and Voyager size
+
+- [x] 6.1 TDD: the dish material is a matte grey with linear luminance ≤ 0.3, low metalness, and an `envMapIntensity` below the metal's.
+- [x] 6.2 TDD: Voyager's scale constant (`VOYAGER_SCALE` in `orientation.ts`) is about 1.3× the M1 scale of 0.45, the outer group uses it, and the chase offset is unchanged.
+- [x] 6.4 TDD in `src/journey/placement.ts`: side spots slide up or down, and above and below spots slide sideways, just clear of Voyager while staying level with or over the body. This was needed because the larger Voyager left some small-body stops (for example Io) with no clear spot.
+- [x] 6.3 Tune both by eye against the reference. Rerun the gate and e2e, including dialog placement and the finale.

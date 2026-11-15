@@ -13,7 +13,7 @@ The view SHALL show a Voyager 1 model from behind and above, with the camera fol
 - two plasma-wave whip antennas
 - thrusters, the LECP and the cosmic-ray instrument
 
-Rendering the whole model SHALL take no more than 14 draw calls and no more than 60,000 triangles. The camera SHALL move smoothly as progress changes, without sudden jumps.
+Voyager SHALL be drawn about a third larger than in M1, so it reads clearly in the foreground, without moving the camera, so bodies keep their on-screen sizes and dialog timing. Rendering the whole model SHALL take no more than 14 draw calls and no more than 60,000 triangles. The camera SHALL move smoothly as progress changes, without sudden jumps.
 
 #### Scenario: Voyager visible at start
 
@@ -25,6 +25,11 @@ Rendering the whole model SHALL take no more than 14 draw calls and no more than
 - **WHEN** the chase camera views Voyager
 - **THEN** the dish's axis points away from the camera, along the direction of travel, and is turned off the camera's line of sight by a small angle, so the dish rim shows beside the bus
 
+#### Scenario: Larger in the foreground
+
+- **WHEN** the voyage loads at progress 0
+- **THEN** Voyager is drawn at about 1.3 times its M1 size, and the camera offset is unchanged
+
 #### Scenario: Recognisable parts present
 
 - **WHEN** the Voyager model is built
@@ -34,6 +39,41 @@ Rendering the whole model SHALL take no more than 14 draw calls and no more than
 
 - **WHEN** the Voyager model is rendered
 - **THEN** it uses no more than 14 draw calls and no more than 60,000 triangles
+
+### Requirement: Voyager materials
+
+Voyager SHALL use physically based materials that tell these surfaces apart: crinkled gold foil, metal, the matte light-grey dish, the dark RTG fins and the gold Golden Record. The dish SHALL be matte and mid-grey rather than bright white, so it does not outshine the bus in the chase view.
+
+- The foil SHALL show a crinkled surface. Its detail SHALL be generated in code from a fixed seed, so every load looks the same.
+- The Golden Record SHALL show faint concentric grooves.
+- Voyager's metals SHALL reflect a space environment built in code: a dark sky, a warm sun-like highlight and a faint blue fill. Building this environment SHALL NOT fetch any file or network resource.
+- The environment SHALL light Voyager only. Earth and the Moon SHALL look the same as before.
+- All textures and environment resources that Voyager creates SHALL be released when the voyage view unmounts.
+
+#### Scenario: Dish is not glaring
+
+- **WHEN** the dish material is inspected
+- **THEN** its base colour is a grey whose linear luminance is at most 0.3, its metalness is low and its environment reflection is weaker than the metal's
+
+#### Scenario: Deterministic foil
+
+- **WHEN** the foil detail is generated twice with the same seed
+- **THEN** both results are identical
+
+#### Scenario: No network for reflections
+
+- **WHEN** the voyage loads
+- **THEN** no network request is made for an environment map or a Voyager texture
+
+#### Scenario: Bodies unaffected
+
+- **WHEN** the voyage is rendered
+- **THEN** Earth and the Moon receive no environment reflections from Voyager's environment
+
+#### Scenario: Resources released
+
+- **WHEN** the voyage view unmounts
+- **THEN** every texture, geometry and environment target that Voyager created is disposed
 
 ### Requirement: Subtle Voyager motion
 
