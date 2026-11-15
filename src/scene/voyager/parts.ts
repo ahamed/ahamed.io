@@ -224,6 +224,15 @@ const BUS_SIDE = 2 * BUS_RADIUS * Math.sin(Math.PI / 10);
 const BUS_REAR = BUS_Z - BUS_DEPTH / 2;
 const RECORD_BAY = 4;
 
+/**
+ * The 12 attitude-control nozzles in a ring on the bus rear, at k·30° (model space). Each
+ * exhausts along -Z, so it pushes the craft along +Z.
+ */
+export const NOZZLES: readonly Vec3[] = Array.from({ length: 12 }, (_, k): Vec3 => {
+  const a = (k * Math.PI * 2) / 12;
+  return [Math.cos(a) * 0.33, Math.sin(a) * 0.33, BUS_REAR - 0.025];
+});
+
 const MAG_BASE: Vec3 = [0.35, 0.3, -0.2];
 const MAG_DIR = normalize([0.643, 0.766, 0]);
 const MAG_LENGTH = 3.4;
@@ -388,17 +397,16 @@ function bus(): PartSpec[] {
       12,
     ),
   );
-  for (let k = 0; k < 12; k++) {
-    const a = (k * Math.PI * 2) / 12;
+  NOZZLES.forEach((position, k) => {
     parts.push({
       id: `thruster-${String(k)}`,
       shape: { kind: 'cone', radius: 0.025, height: 0.05, segments: 10 },
-      position: [Math.cos(a) * 0.33, Math.sin(a) * 0.33, BUS_REAR - 0.025],
+      position,
       rotation: [Math.PI / 2, 0, 0],
       material: 'black',
       group: 'static',
     });
-  }
+  });
   return parts;
 }
 
