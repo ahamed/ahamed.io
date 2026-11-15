@@ -15,14 +15,15 @@ import type { MoonPresetId } from './moonPresets';
 import { Rock } from './Rock';
 import type { RockPresetId } from './rockShape';
 import { Saturn } from './Saturn';
+import type { SpinKey } from './spin';
 import { TexturedMoon } from './TexturedMoon';
 
 type BodyComponent = (props: { radius: number }) => React.JSX.Element;
 
-/** Small moons and hero asteroids are seeded rocks, one shape preset each. */
+/** Small moons and hero asteroids are seeded rocks, one shape preset each, each with its spin. */
 const rock =
-  (preset: RockPresetId): BodyComponent =>
-  ({ radius }) => <Rock preset={preset} radius={radius} />;
+  (preset: RockPresetId & SpinKey): BodyComponent =>
+  ({ radius }) => <Rock preset={preset} radius={radius} spin={preset} />;
 
 const comet =
   (variant: CometVariant): BodyComponent =>

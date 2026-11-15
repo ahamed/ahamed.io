@@ -5,8 +5,13 @@ import { useReducedMotion } from '../useReducedMotion';
 import { buildVoyager, type VoyagerModel } from './build';
 import { createSpaceEnvironment } from './environment';
 import { createVoyagerMaterials, type VoyagerMaterials } from './materials';
+import { thrusterLink } from '../../audio/thrusterLink';
 import { createPose, voyagerPoseInto } from './motion';
+import { VOYAGER_ORIENTATION, VOYAGER_SCALE } from './orientation';
 import { PARTS, PIVOTS, type MotionGroup } from './parts';
+import { Puffs } from './Puffs';
+
+const ORIENTATION: [number, number, number] = [...VOYAGER_ORIENTATION];
 
 /** PMREM needs a real WebGL 2 context; jsdom and the R3F test renderer have none. */
 function canPrefilter(gl: WebGLRenderer): boolean {
@@ -38,10 +43,13 @@ function Meshes({
 }
 
 /**
- * Museum-grade procedural Voyager 1. Travels toward -Z with its high-gain antenna facing back
- * toward Earth (+Z), so the chase camera sees the dish. Static parts are merged per material;
+ * Museum-grade procedural Voyager 1. Travels toward -Z, turned to a fixed three-quarter back
+ * view so the trailing chase camera sees the bus and Golden Record with the dish behind and
+ * offset (it never rolls: the real craft is 3-axis stabilised). Static parts are merged per material;
  * the scan platform, whips and magnetometer tip are separate pivot groups that move a little,
- * and the whole craft drifts in attitude. Motion freezes under prefers-reduced-motion.
+ * and the whole craft holds a ±2° attitude deadband: it drifts, then a rear thruster puffs to
+ * push it back (each pulse also signals `thrusterLink` for a hiss). Motion freezes under
+ * prefers-reduced-motion.
  */
 export function Voyager(props: { position?: [number, number, number] }) {
   const gl = useThree((s) => s.gl);
@@ -79,6 +87,8 @@ export function Voyager(props: { position?: [number, number, number] }) {
   const magTip = useRef<Group>(null);
   const [pose] = useState(createPose);
   const elapsed = useRef(0);
+  /** Latest pulse seen, or null before the first frame (so earlier pulses never fire). */
+  const lastPulse = useRef<number | null>(null);
 
   useFrame((_, dt) => {
     elapsed.current += Math.min(dt, 0.1);
@@ -88,24 +98,32 @@ export function Voyager(props: { position?: [number, number, number] }) {
     whipL.current?.rotation.set(pose.whipL, 0, pose.whipL * 0.5);
     whipR.current?.rotation.set(pose.whipR, 0, pose.whipR * 0.5);
     magTip.current?.rotation.set(pose.magTip, 0, pose.magTip);
+    // One hiss per new pulse; a jump (or reduced motion toggling) re-syncs without firing.
+    if (lastPulse.current !== null && pose.pulseCount === lastPulse.current + 1) {
+      thrusterLink.fire();
+    }
+    lastPulse.current = pose.pulseCount;
   });
 
   const shared = { model, materials };
   return (
-    <group {...props} scale={0.45}>
-      <group name="attitude" ref={attitude}>
-        <Meshes group="static" {...shared} />
-        <group name="scan" ref={scan} position={PIVOTS.scan}>
-          <Meshes group="scan" {...shared} />
-        </group>
-        <group name="whip-l" ref={whipL} position={PIVOTS['whip-l']}>
-          <Meshes group="whip-l" {...shared} />
-        </group>
-        <group name="whip-r" ref={whipR} position={PIVOTS['whip-r']}>
-          <Meshes group="whip-r" {...shared} />
-        </group>
-        <group name="mag-tip" ref={magTip} position={PIVOTS['mag-tip']}>
-          <Meshes group="mag-tip" {...shared} />
+    <group {...props} scale={VOYAGER_SCALE}>
+      <group name="orientation" rotation={ORIENTATION}>
+        <group name="attitude" ref={attitude}>
+          <Meshes group="static" {...shared} />
+          <Puffs brightness={pose.puffs} />
+          <group name="scan" ref={scan} position={PIVOTS.scan}>
+            <Meshes group="scan" {...shared} />
+          </group>
+          <group name="whip-l" ref={whipL} position={PIVOTS['whip-l']}>
+            <Meshes group="whip-l" {...shared} />
+          </group>
+          <group name="whip-r" ref={whipR} position={PIVOTS['whip-r']}>
+            <Meshes group="whip-r" {...shared} />
+          </group>
+          <group name="mag-tip" ref={magTip} position={PIVOTS['mag-tip']}>
+            <Meshes group="mag-tip" {...shared} />
+          </group>
         </group>
       </group>
     </group>

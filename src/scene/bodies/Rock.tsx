@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { type Mesh, MeshStandardMaterial } from 'three';
 import { createRockGeometry } from './rockGeometry';
 import type { RockPresetId } from './rockShape';
+import type { SpinKey } from './spin';
+import { Spinning } from './Spinning';
 import { useDrawDistance } from './useDrawDistance';
 
 /** Base colours (sRGB) per rocky body; the preset's shade varies them across the surface. */
@@ -41,14 +43,22 @@ function createRock(preset: RockPresetId) {
 
 /**
  * A small moon or hero asteroid generated from its seeded shape preset, drawn only while it
- * would be at least a few pixels across.
+ * would be at least a few pixels across. With `spin`, it turns about that body's seeded axis.
  */
-export function Rock({ preset, radius }: { preset: RockPresetId; radius: number }) {
+export function Rock({
+  preset,
+  radius,
+  spin,
+}: {
+  preset: RockPresetId;
+  radius: number;
+  spin?: SpinKey;
+}) {
   const rock = useMemo(() => createRock(preset), [preset]);
   useEffect(() => rock.dispose, [rock]);
   const meshRef = useRef<Mesh>(null);
   useDrawDistance(meshRef, radius);
-  return (
+  const mesh = (
     <mesh
       ref={meshRef}
       name={`rock-${preset}`}
@@ -57,4 +67,5 @@ export function Rock({ preset, radius }: { preset: RockPresetId; radius: number 
       scale={radius}
     />
   );
+  return spin ? <Spinning spin={spin}>{mesh}</Spinning> : mesh;
 }

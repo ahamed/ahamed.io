@@ -78,12 +78,13 @@ export function createVoyagerMaterials(env: Texture | null): VoyagerMaterials {
     }),
     dish: new MeshStandardMaterial({
       name: 'voyager-dish',
-      color: '#e8e6e1',
-      metalness: 0.1,
-      roughness: 0.6,
+      // Matte mid-grey, not bright white, so the dish does not outshine the bus.
+      color: '#5e6570',
+      metalness: 0.05,
+      roughness: 0.75,
       side: DoubleSide,
       envMap: env,
-      envMapIntensity: 0.6,
+      envMapIntensity: 0.25,
     }),
     dark: new MeshStandardMaterial({
       name: 'voyager-dark',

@@ -19,13 +19,14 @@ afterEach(() => {
 });
 
 describe('TexturedMoon orientation', () => {
-  it('turns Pluto by its preset yaw, then tilts it by its preset pitch', async () => {
+  it('turns Pluto by its preset yaw, spins it about its pole, then tilts it by its pitch', async () => {
     const renderer = await ReactThreeTestRenderer.create(
       <TexturedMoon preset="pluto" radius={2.6} />,
     );
     const surface = renderer.scene.instance.getObjectByName('moon-pluto') as Mesh;
     expect(surface.rotation.y).toBeCloseTo(MOON_PRESETS.pluto.yaw ?? NaN, 9);
-    expect(surface.parent?.rotation.x).toBeCloseTo(MOON_PRESETS.pluto.pitch ?? NaN, 9);
+    expect(surface.parent?.name).toBe('spin-pluto');
+    expect(surface.parent?.parent?.rotation.x).toBeCloseTo(MOON_PRESETS.pluto.pitch ?? NaN, 9);
     await renderer.unmount();
   });
 });

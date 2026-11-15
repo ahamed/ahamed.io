@@ -1,6 +1,7 @@
 import { blipParams, playBlip } from './blip';
 import { droneParams } from './drone';
 import { buildDrone, buildPlasma } from './graph';
+import { createHissBuffer, hissParams, playHiss } from './hiss';
 import { plasmaParams } from './plasma';
 
 /** Time constant (s) of the mute ramp: about 0.15 s to silence, with no click. */
@@ -16,6 +17,8 @@ export interface AudioEngine {
   start: () => void;
   /** Plays the blip if started and not muted; returns whether it played. Never queues. */
   blip: () => boolean;
+  /** Plays a thruster hiss if started and not muted; returns whether it played. Never queues. */
+  hiss: () => boolean;
   setMuted: (muted: boolean) => void;
   /** The plasma texture's level, 0..1 (see plasmaGain). */
   setPlasma: (level: number) => void;
@@ -27,18 +30,23 @@ interface Options {
   createContext?: () => AudioContext;
 }
 
-/** The voyage's sound: a master gain (mute) over the drone, the plasma texture and the blip. */
+/**
+ * The voyage's sound: a master gain (mute) over the drone, the plasma texture, the blip and the
+ * thruster hiss.
+ */
 export function createAudioEngine({
   createContext = () => new AudioContext(),
 }: Options = {}): AudioEngine {
   let ctx: AudioContext | null = null;
   let master: GainNode | null = null;
   let plasma: GainNode | null = null;
+  let hissBuffer: AudioBuffer | null = null;
   let muted = false;
   let plasmaLevel = 0;
   let scheduledPlasma = -1;
   const listeners = new Set<() => void>();
   const blip = blipParams();
+  const hiss = hissParams();
   const plasmaSettings = plasmaParams();
 
   const applyPlasma = () => {
@@ -58,12 +66,18 @@ export function createAudioEngine({
       master.connect(ctx.destination);
       buildDrone(ctx, master, droneParams());
       plasma = buildPlasma(ctx, master, plasmaSettings).gain;
+      hissBuffer = createHissBuffer(ctx);
       applyPlasma();
       for (const listener of listeners) listener();
     },
     blip: () => {
       if (!ctx || !master || muted) return false;
       playBlip(ctx, blip, master);
+      return true;
+    },
+    hiss: () => {
+      if (!ctx || !master || !hissBuffer || muted) return false;
+      playHiss(ctx, hiss, hissBuffer, master);
       return true;
     },
     setMuted: (value) => {

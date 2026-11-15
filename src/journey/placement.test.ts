@@ -67,6 +67,41 @@ describe('placeDialog', () => {
     expect(onScreen(rect)).toBe(true);
   });
 
+  it('slides a side spot up, still beside the body, to clear a large Voyager', () => {
+    // A small body just above a big Voyager: centred on the body, the side spot would graze the
+    // top of Voyager's box, but there is room to slide it up.
+    const viewport = { w: 1280, h: 720 };
+    const voyager: Rect = { x: 451, y: 322, w: 300, h: 305 };
+    const dialog = { w: 381, h: 201 };
+    const body = { x: 610, y: 226, r: 9 };
+    const placed = placeDialog({ viewport, body, voyager, dialog, previous: null, margin: 16 });
+    const rect = rectOf2(placed, dialog);
+    expect(['left', 'right']).toContain(placed.spot);
+    expect(overlaps(rect, voyager)).toBe(false);
+    expect(hitsCircle(rect, body)).toBe(false);
+    expect(rect.y).toBeGreaterThanOrEqual(16);
+    // Still level with the body, not floated away from it.
+    expect(rect.y).toBeLessThanOrEqual(body.y);
+    expect(rect.y + rect.h).toBeGreaterThanOrEqual(body.y);
+  });
+
+  it('slides an above spot sideways, still over the body, to clear a large Voyager', () => {
+    // Io at its stop: low and just left of a big Voyager, too near the left edge for a left
+    // spot. Centred over the body, the above spot would overlap Voyager's box.
+    const viewport = { w: 1744, h: 992 };
+    const voyager: Rect = { x: 678, y: 399, w: 515, h: 505 };
+    const dialog = { w: 409, h: 205 };
+    const body = { x: 557, y: 558, r: 120 };
+    const placed = placeDialog({ viewport, body, voyager, dialog, previous: null, margin: 16 });
+    const rect = rectOf2(placed, dialog);
+    expect(overlaps(rect, voyager)).toBe(false);
+    expect(hitsCircle(rect, body)).toBe(false);
+    expect(rect.x).toBeGreaterThanOrEqual(16);
+    // Still over the body.
+    expect(rect.x).toBeLessThanOrEqual(body.x);
+    expect(rect.x + rect.w).toBeGreaterThanOrEqual(body.x);
+  });
+
   it('uses the other side when the first side has no room', () => {
     // Left of centre but hugging the left edge: no room on its left.
     const body = { x: 150, y: 200, r: 100 };
