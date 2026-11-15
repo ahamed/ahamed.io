@@ -39,6 +39,11 @@ TypeScript is pinned to `6.0.3`. Do not upgrade to TS 7 until typescript-eslint'
    - **What changed.** List each completed task (number and short description). Under each task, name the files it created or changed and the behaviour it added, so the reader can tell which changes are done. Name tasks that are still open, and any deviations from the design, with the reason for each.
    - **How to check it manually.** Give numbered steps the user can follow themselves. Each step has the exact command or URL (e.g. `pnpm dev`, then open `http://localhost:5173`), what to do (scroll, press a key, resize to phone width), and what they should see. Cover every user-visible behaviour in the change's spec scenarios. For tooling-only changes, give a command plus its expected output, or a violation to plant and the failure to expect.
 
+## Git branches
+
+- **`dev` is the working branch.** Commit to `dev` (or to a short-lived branch merged into `dev`) and push to `origin dev`. Open pull requests against `dev`.
+- **Never commit to or push to `main` directly.** A push to `main` triggers the deployment workflow. Changes reach `main` only when the user explicitly asks to merge `dev` into it.
+
 ## Architecture
 
 - **Pure, unit-tested modules.** No React or three.js imports here.
