@@ -60,6 +60,26 @@ describe('audio engine', () => {
     expect(engine.blip()).toBe(true);
   });
 
+  it('hisses only after start and while not muted', () => {
+    const { engine } = setup();
+    expect(engine.hiss()).toBe(false);
+    engine.start();
+    expect(engine.hiss()).toBe(true);
+    engine.setMuted(true);
+    expect(engine.hiss()).toBe(false);
+    engine.setMuted(false);
+    expect(engine.hiss()).toBe(true);
+  });
+
+  it('makes the hiss noise buffer once, at start, and reuses it', () => {
+    const { engine, ctx } = setup();
+    const createBuffer = vi.spyOn(ctx, 'createBuffer');
+    engine.start();
+    const afterStart = createBuffer.mock.calls.length;
+    for (let i = 0; i < 3; i++) engine.hiss();
+    expect(createBuffer.mock.calls.length).toBe(afterStart);
+  });
+
   it('ramps the master gain on mute, without a click', () => {
     const { engine, calls } = setup();
     engine.start();
