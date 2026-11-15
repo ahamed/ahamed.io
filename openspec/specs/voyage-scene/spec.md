@@ -57,12 +57,12 @@ Earth and the Moon SHALL be rendered as smooth textured spheres along the route,
 
 ### Requirement: Loads without errors and degrades without WebGL
 
-The voyage view SHALL load without console errors. If WebGL is unavailable, the page SHALL still show the main landmark and a message that the 3D view is not supported, instead of a blank or broken screen.
+The voyage view SHALL load without console errors. If WebGL is unavailable, the page SHALL show Text mode with all of the content, together with a short note that the 3D voyage needs WebGL, instead of a blank or broken screen.
 
 #### Scenario: No WebGL
 
 - **WHEN** the page loads in a browser with WebGL disabled
-- **THEN** a "3D view not supported" message is shown, and no uncaught exception occurs
+- **THEN** Text mode is shown with every card title, a note says the 3D voyage needs WebGL, and no uncaught exception occurs
 
 ### Requirement: Voyager materials
 
