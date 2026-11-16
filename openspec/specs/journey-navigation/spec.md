@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Defines how the visitor moves along the voyage route with wheel, keyboard and touch input: the bounds, the smoothing, the snapping to stops, and which stop is active.
+Defines how the visitor moves along the voyage route with wheel, keyboard and touch input: the constant-speed throttle, the jumps between stops, the bounds, and which stop is active.
 
 ## Requirements
 
 ### Requirement: Virtual progress drives the voyage
 
-The voyage position SHALL be one progress value from 0 (start, at Earth) to 1 (end of the current route). The page itself SHALL NOT scroll. Input SHALL change a target progress, and the shown position SHALL ease toward that target.
+The voyage position SHALL be one progress value from 0 (start, at Earth) to 1 (end of the current route). The page itself SHALL NOT scroll. Travel input SHALL set a direction of travel rather than a distance. The shown position SHALL move at a speed that eases toward the commanded speed, and SHALL be clamped to [0, 1]. Jumps (PageUp/PageDown, Home/End, a map click, Back to Earth) SHALL ease the position toward their destination without overshooting.
 
 #### Scenario: Page does not scroll
 
@@ -17,59 +17,50 @@ The voyage position SHALL be one progress value from 0 (start, at Earth) to 1 (e
 
 #### Scenario: Progress is clamped
 
-- **WHEN** input would push the target progress below 0 or above 1
-- **THEN** the target stays at 0 or 1
+- **WHEN** travel would push the position below 0 or above 1
+- **THEN** the position stays at 0 or 1
 
 #### Scenario: Smooth approach
 
-- **WHEN** the target progress jumps
-- **THEN** the shown position moves toward it over several frames without overshooting, and converges independently of frame rate
+- **WHEN** a jump starts
+- **THEN** the shown position moves toward its destination over several frames without overshooting, and converges independently of frame rate
 
 ### Requirement: Wheel, keyboard and touch input
 
-All of these SHALL move the voyage:
+Wheel, ↑/↓ and touch input SHALL act as a throttle. While any of them is active in the forward direction, Voyager SHALL fly forward at one constant cruise speed. The cruise speed SHALL be the same as autoplay's, and the same whatever the scroll speed. In the backward direction it SHALL fly back at the same speed. Voyager SHALL ease up to cruise speed when input begins. It SHALL ease to rest within about 0.5 s of the last input. Speed SHALL never jump.
 
 - **Wheel or trackpad:** down moves forward, up moves back.
-- **↓ / ↑:** each press moves a small step forward or back; holding the key repeats the step.
-- **PageDown / PageUp:** go to the next or previous stop's close point.
-- **Home / End:** go to the start or the end.
-- **Touch:** swipe up moves forward, swipe down moves back.
+- **↓ / ↑:** pressing or holding moves forward or back.
+- **PageDown / PageUp:** jump to the next or previous stop's capture point.
+- **Home / End:** jump to the start or the end.
+- **Touch:** swiping up moves forward, swiping down moves back.
 
-Keys SHALL be ignored while focus is in a text input.
+During an orbit, forward travel input SHALL speed up the orbit clock instead of moving along the route, and backward input SHALL leave the orbit. A jump SHALL release any orbit at once. Keys SHALL be ignored while focus is in a text input. While autoplay is on, wheel, ↑/↓ and touch SHALL be ignored.
 
-#### Scenario: Arrow key steps forward
+#### Scenario: Arrow key moves forward at cruise speed
 
-- **WHEN** the visitor presses ↓ once at the start
-- **THEN** the target progress increases by one step and no stop is skipped
+- **WHEN** the visitor holds ↓ for one second away from any stop
+- **THEN** Voyager moves forward at cruise speed, and after release it comes to rest within about 0.5 s
+
+#### Scenario: Scroll speed does not change cruise speed
+
+- **WHEN** the visitor scrolls forward slowly, then fast, between two stops
+- **THEN** Voyager's speed along the route is the same in both cases once eased in
 
 #### Scenario: PageDown jumps to next stop
 
-- **WHEN** the visitor presses PageDown while at Earth
-- **THEN** the target progress becomes the Moon's close point
+- **WHEN** the visitor presses PageDown after Earth's release
+- **THEN** the voyage flies to the Moon's capture point
 
 #### Scenario: End and Home
 
 - **WHEN** the visitor presses End, then Home
-- **THEN** the target progress becomes 1, then 0
+- **THEN** the position becomes 1, then 0
 
 #### Scenario: Touch swipe
 
-- **WHEN** the visitor swipes upward on a touch screen
-- **THEN** the voyage moves forward by an amount proportional to the swipe distance
-
-### Requirement: Soft snap to stops
-
-When input has been idle for a short time and the position is within a stop's snap zone, the target SHALL ease to that stop's close point. Outside every snap zone the target SHALL stay where input left it. Snapping SHALL never be triggered while input is active.
-
-#### Scenario: Snap when idle near a stop
-
-- **WHEN** input stops with the position inside the Moon's snap zone
-- **THEN** after the idle delay the position settles on the Moon's close point
-
-#### Scenario: No snap mid-gesture
-
-- **WHEN** the visitor keeps scrolling through a snap zone
-- **THEN** no snap happens until input has been idle for the delay
+- **WHEN** the visitor swipes upward on a touch screen away from any stop
+- **THEN** the voyage moves forward at cruise speed and eases to rest after the swipe
 
 ### Requirement: Active stop
 

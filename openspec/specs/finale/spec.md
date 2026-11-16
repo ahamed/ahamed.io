@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the end of the voyage: the look-back where the camera orbits to Voyager's front and faces the Pale Blue Dot, the caption, the contact card with its links, the final snap, and the Back to Earth rewind.
+Defines the end of the voyage: the look-back where the camera orbits to Voyager's front and faces the Pale Blue Dot, the caption, the contact card with its links, Voyager turning its dish to Earth, and the Back to Earth rewind.
 
 ## Requirements
 
@@ -25,15 +25,6 @@ Moving backward SHALL reverse the turn exactly.
 
 - **WHEN** the visitor scrolls back from the end
 - **THEN** the camera returns to the chase view behind Voyager by the time the heliopause stop is reached
-
-### Requirement: Final snap
-
-When input is idle and the position is inside the finale turn, the target SHALL ease to the end of the route. End SHALL go to the end of the route. Snapping to the heliopause stop SHALL keep working as before.
-
-#### Scenario: Stopping mid-turn completes the turn
-
-- **WHEN** input stops partway through the turn
-- **THEN** after the idle delay the position settles at the end of the route
 
 ### Requirement: Pale Blue Dot
 
@@ -76,3 +67,17 @@ The card SHALL have a "Back to Earth" button. It SHALL rewind the voyage to the 
 
 - **WHEN** the visitor scrolls during the rewind
 - **THEN** the rewind stops and the scroll moves the voyage from where it is
+
+### Requirement: Voyager turns to Earth
+
+During the look-back, Voyager SHALL turn smoothly until its dish faces Earth, in step with the camera's turn. The turn SHALL be driven by progress: none at the heliopause stop, complete in the final view. It SHALL show attitude-thruster puffs while turning. Moving backward SHALL reverse it. Under reduced motion Voyager SHALL hold its final attitude in the final view, with no puffs.
+
+#### Scenario: Dish on Earth at the end
+
+- **WHEN** the voyage is at the end of the route
+- **THEN** Voyager's dish axis points toward Earth's position within a few degrees
+
+#### Scenario: Turn reverses
+
+- **WHEN** the visitor scrolls back from the end to the heliopause stop
+- **THEN** Voyager's attitude returns to its cruise orientation without a jump
