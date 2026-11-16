@@ -14,6 +14,7 @@ function fakeEngine() {
     }),
     blip: vi.fn(() => started),
     hiss: vi.fn(() => started),
+    tick: vi.fn(() => started),
     setMuted: vi.fn(),
     setPlasma: vi.fn(),
     onStart: (listener: () => void) => {

@@ -1,8 +1,18 @@
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STOPS } from '../../content/journey';
+import { journeyRuntime } from '../../store/journey';
+import { typingLink } from '../../audio/typingLink';
 import { dialogElements } from './registry';
 import { TerminalDialog } from './TerminalDialog';
+
+/** Sets the orbit clock and lets the reveal's animation frame read it. */
+function clock(ms: number) {
+  journeyRuntime.orbitClock = ms;
+  act(() => {
+    vi.advanceTimersByTime(50);
+  });
+}
 
 const earth = STOPS[0];
 const moon = STOPS[1];
@@ -10,6 +20,7 @@ if (!earth || !moon) throw new Error('fixture stops missing');
 
 beforeEach(() => {
   vi.useFakeTimers();
+  journeyRuntime.orbitClock = 0;
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -29,19 +40,38 @@ describe('TerminalDialog', () => {
   });
 
   it('exposes the full text while the typewriter is still revealing', () => {
-    render(<TerminalDialog stop={earth} open />);
+    render(<TerminalDialog stop={earth} open typing />);
     const region = screen.getByRole('region', { name: earth.title });
     expect(region).toHaveTextContent(earth.text);
   });
 
-  it('reveals the visible text over time', () => {
-    render(<TerminalDialog stop={earth} open />);
+  it('reveals the text on the orbit clock: 60 characters a second', () => {
+    render(<TerminalDialog stop={earth} open typing />);
     const typed = document.querySelector('[data-typewriter]');
-    expect(typed?.textContent.length).toBeLessThan(earth.text.length);
-    act(() => {
-      vi.advanceTimersByTime(60_000);
-    });
+    expect(typed?.textContent).toBe('');
+    clock(2000);
+    expect(typed?.textContent).toBe(earth.text.slice(0, 120));
+    clock(600_000);
     expect(typed?.textContent).toBe(earth.text);
+  });
+
+  it('hands each newly revealed character to the typing link', () => {
+    const seen: string[] = [];
+    typingLink.reveal = (char) => seen.push(char);
+    render(<TerminalDialog stop={earth} open typing />);
+    clock(500);
+    expect(seen.join('')).toBe(earth.text.slice(0, 30));
+    typingLink.reveal = () => undefined;
+  });
+
+  it('opens fully typed when it is not typing (a read card, or a reduced-motion hold)', () => {
+    const seen: string[] = [];
+    typingLink.reveal = (char) => seen.push(char);
+    render(<TerminalDialog stop={earth} open typing={false} />);
+    expect(document.querySelector('[data-typewriter]')?.textContent).toBe(earth.text);
+    clock(500);
+    expect(seen).toEqual([]);
+    typingLink.reveal = () => undefined;
   });
 
   it('renders verified links only', () => {
@@ -91,23 +121,16 @@ describe('TerminalDialog', () => {
     });
 
     it('reveals the chips once the typewriter has finished', () => {
-      render(<TerminalDialog stop={phobos} open />);
+      render(<TerminalDialog stop={phobos} open typing />);
       const list = screen.getByRole('list', { name: 'Tech' });
       expect(list).not.toHaveAttribute('data-revealed');
-      act(() => {
-        vi.advanceTimersByTime(60_000);
-      });
+      clock(600_000);
       expect(list).toHaveAttribute('data-revealed');
     });
 
-    it('shows the chips at once under reduced motion', () => {
-      vi.stubGlobal(
-        'matchMedia',
-        vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
-      );
-      render(<TerminalDialog stop={phobos} open />);
+    it('shows the chips at once when not typing', () => {
+      render(<TerminalDialog stop={phobos} open typing={false} />);
       expect(screen.getByRole('list', { name: 'Tech' })).toHaveAttribute('data-revealed');
-      vi.unstubAllGlobals();
     });
   });
 });

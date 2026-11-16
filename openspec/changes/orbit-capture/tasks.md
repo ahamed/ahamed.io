@@ -89,16 +89,16 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
 
 ## 5. Typewriter on the orbit clock, with ticks
 
-- [ ] 5.1 TDD `useReveal(stopId, text)`, which replaces `useTypewriter`:
+- [x] 5.1 TDD `useReveal(stopId, text)`, which replaces `useTypewriter`:
   - It follows `journeyRuntime.revealed` while that stop is captured.
   - It returns the full length for read stops, under reduced motion, or when the stop isn't captured.
   - It calls `setState` only when the count changes.
   - Update `TerminalDialog.test.tsx`, including the full text staying in the accessibility tree.
-- [ ] 5.2 TDD `src/audio/tick.ts`:
+- [x] 5.2 TDD `src/audio/tick.ts`:
   - `tickParams(rand)` stays within bounds, varies, lasts under 40 ms, and is quieter than the blip.
   - `shouldTick(char, now, last)` skips whitespace and enforces 33 ms.
   - `playTick` works on a fake context.
-- [ ] 5.3 Add `src/audio/typingLink.ts` and `engine.tick()`. TDD `wireAudio`:
+- [x] 5.3 Add `src/audio/typingLink.ts` and `engine.tick()`. TDD `wireAudio`:
   - Ticks play only when unlocked and unmuted.
   - There are none for read or reduced-motion reveals.
   - The rate stays at or below 30/s at 150 characters per second.

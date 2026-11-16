@@ -5,10 +5,19 @@ import { TerminalDialog } from './TerminalDialog';
 /** One dialog per stop; only the store's open stop is shown. */
 export function DialogLayer({ stops }: { stops: readonly Stop[] }) {
   const openStopId = useJourney((s) => s.openStopId);
+  // A card types while its stop is in a lap (or the heliopause drift); otherwise it is shown whole.
+  const typingId = useJourney((s) =>
+    s.orbit === 'lap' || s.orbit === 'drift' ? s.capturedStopId : null,
+  );
   return (
     <>
       {stops.map((stop) => (
-        <TerminalDialog key={stop.id} stop={stop} open={stop.id === openStopId} />
+        <TerminalDialog
+          key={stop.id}
+          stop={stop}
+          open={stop.id === openStopId}
+          typing={stop.id === typingId}
+        />
       ))}
     </>
   );

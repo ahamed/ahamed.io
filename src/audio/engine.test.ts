@@ -71,6 +71,25 @@ describe('audio engine', () => {
     expect(engine.hiss()).toBe(true);
   });
 
+  it('ticks only after start, while not muted, and never for whitespace', () => {
+    const { engine } = setup();
+    expect(engine.tick('a', 0)).toBe(false);
+    engine.start();
+    expect(engine.tick('a', 100)).toBe(true);
+    expect(engine.tick(' ', 200)).toBe(false);
+    engine.setMuted(true);
+    expect(engine.tick('b', 300)).toBe(false);
+  });
+
+  it('keeps ticks to about 30 a second when typing at 150 characters a second', () => {
+    const { engine } = setup();
+    engine.start();
+    let played = 0;
+    for (let i = 0; i < 150; i++) if (engine.tick('x', 1000 + (i * 1000) / 150)) played++;
+    expect(played).toBeLessThanOrEqual(30);
+    expect(played).toBeGreaterThan(20);
+  });
+
   it('makes the hiss noise buffer once, at start, and reuses it', () => {
     const { engine, ctx } = setup();
     const createBuffer = vi.spyOn(ctx, 'createBuffer');

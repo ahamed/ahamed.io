@@ -2,11 +2,13 @@ import { useCallback, useId } from 'react';
 import type { Stop } from '../../content/schema';
 import { registerDialog } from './registry';
 import styles from './TerminalDialog.module.css';
-import { useTypewriter } from './useTypewriter';
+import { useReveal } from './useReveal';
 
 interface Props {
   stop: Stop;
   open: boolean;
+  /** Whether the card types on the orbit clock (its stop is in a lap or drift). */
+  typing?: boolean;
 }
 
 const yearRange = (start: number, end: number | 'present'): string =>
@@ -49,13 +51,13 @@ function CardBody({
   );
 }
 
-/** Typewriter body; remounts (restarts) every time the dialog opens. Chips follow the text. */
+/** Typewriter body paced by the orbit clock. Chips follow the text. */
 function TypedBody({ text, tech }: { text: string; tech: readonly string[] }) {
-  return <CardBody text={text} tech={tech} typed={useTypewriter(text)} />;
+  return <CardBody text={text} tech={tech} typed={useReveal(text)} />;
 }
 
 /** Terminal-style card for one stop. Positioned per frame via CSS vars by the scene. */
-export function TerminalDialog({ stop, open }: Props) {
+export function TerminalDialog({ stop, open, typing = false }: Props) {
   const titleId = useId();
   const links = stop.links.filter((link) => link.verified);
 
@@ -81,10 +83,14 @@ export function TerminalDialog({ stop, open }: Props) {
         </span>
         {stop.title}
       </h2>
-      {open ? (
+      {open && typing ? (
         <TypedBody text={stop.text} tech={stop.tech ?? []} />
       ) : (
-        <CardBody text={stop.text} tech={stop.tech ?? []} />
+        <CardBody
+          text={stop.text}
+          tech={stop.tech ?? []}
+          typed={open ? stop.text.length : undefined}
+        />
       )}
       {stop.timeline.length > 0 && (
         <ol className={styles.timeline}>
