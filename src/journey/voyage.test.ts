@@ -135,6 +135,37 @@ describe('capture', () => {
   });
 });
 
+describe('a full forward run', () => {
+  const fullRun = (autoplay: boolean, fps: number) => {
+    const s = createVoyageState(ctx);
+    const input = createVoyageInput();
+    input.phase = 'voyage';
+    input.autoplay = autoplay;
+    input.dir = autoplay ? 0 : 1;
+    input.intensity = 0.3;
+    const read: string[] = [];
+    input.readStops = read;
+    const captured: string[] = [];
+    const dt = 1 / fps;
+    let now = 0;
+    for (let f = 0; f < fps * 900 && s.position < 1 - 1e-3; f++) {
+      now += dt * 1000;
+      stepVoyageInto(s, input, ctx, dt, now);
+      if (s.events & EV_CAPTURED) captured.push(ctx.ids[s.eventStop] ?? '');
+      if (s.events & EV_READ) read.push(ctx.ids[s.eventStop] ?? '');
+    }
+    return captured;
+  };
+
+  for (const autoplay of [false, true]) {
+    for (const fps of [60, 144]) {
+      it(`captures every stop in order (${autoplay ? 'autoplay' : 'scroll'}, ${String(fps)} fps)`, () => {
+        expect(fullRun(autoplay, fps)).toEqual(ctx.ids.slice(1));
+      });
+    }
+  }
+});
+
 describe('the lap', () => {
   const captured = () =>
     setup((s, input) => {

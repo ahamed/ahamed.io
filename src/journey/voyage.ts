@@ -179,7 +179,7 @@ const isRead = (ctx: VoyageContext, input: VoyageInput, i: number) =>
 /** Index of the first unread stop whose capture point is ahead of `p`, or -1. */
 function nextUnread(ctx: VoyageContext, input: VoyageInput, p: number): number {
   for (let i = 0; i < ctx.capture.length; i++) {
-    if ((ctx.capture[i] ?? 0) > p + MATCH_EPSILON && !isRead(ctx, input, i)) return i;
+    if ((ctx.capture[i] ?? 0) > p && !isRead(ctx, input, i)) return i;
   }
   return -1;
 }
