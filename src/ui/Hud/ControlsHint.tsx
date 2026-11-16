@@ -5,11 +5,15 @@ import { journeyRuntime, type JourneyStore } from '../../store/journey';
 import { BOOTED_KEY } from '../BootLoader/BootLoader';
 import styles from './Hud.module.css';
 
-export const KEYS_HINT = 'Scroll or ↑↓ to travel · PgDn next stop · Space autoplay · M sound';
+export const KEYS_HINT =
+  'Scroll or ↑↓ to fly · Scroll during an orbit to read faster · Space autoplay · M sound';
 export const TOUCH_HINT = 'Swipe up to travel · Tap the map to jump';
 const CHECK_MS = 500;
-/** Within this progress of the start, the voyage counts as resting at Earth. */
-const AT_EARTH = 1e-3;
+/**
+ * Within this progress of the start, the voyage counts as resting at Earth (Voyager rests at
+ * Earth's capture point, about 0.001 along the route).
+ */
+const AT_EARTH = 5e-3;
 
 /** Read once at load, before Begin marks the visit: is this the visitor's first mission? */
 const FIRST_VISIT = (() => {

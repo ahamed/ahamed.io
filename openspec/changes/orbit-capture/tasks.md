@@ -106,7 +106,7 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
 
 ## 6. Autoplay as a cruise
 
-- [ ] 6.1 TDD the autoplay inside `stepVoyageInto`:
+- [x] 6.1 TDD the autoplay inside `stepVoyageInto`:
   - A constant `dir = +1` at cruise speed.
   - The boost is held at 1 while captured.
   - The slingshot boost eases back to cruise speed.
@@ -114,7 +114,7 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
   - It lands at the end with `min(cruise, 3·(1−p))` and turns autoplay off.
   - Turning it off mid-lap leaves scroll-mode rules in charge.
 - [x] 6.2 Delete the `useAutoplay` timers and the old `autoplayNext`/`dwellMs`, and update `useAutoplay.test.ts`, or remove it if it is now empty.
-- [ ] 6.3 Add the "Autoplay on · Space to stop" HUD hint, driven by `ignoredHintAt` and shown for 1.5 s. Update the controls hint text to the new wording. Add unit tests.
+- [x] 6.3 Add the "Autoplay on · Space to stop" HUD hint, driven by `ignoredHintAt` and shown for 1.5 s. Update the controls hint text to the new wording. Add unit tests.
 
 ## 7. E2E, reduced motion and phones
 

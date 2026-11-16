@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useStore } from 'zustand';
 import type { Stop } from '../../content/schema';
 import type { JourneyStore } from '../../store/journey';
+import { AutoplayHint } from './AutoplayHint';
 import { ControlsHint } from './ControlsHint';
 import styles from './Hud.module.css';
 import { ProgressMap } from './ProgressMap';
@@ -33,6 +34,7 @@ function HudContent({ store, stops, closePoints }: Props) {
       <ProgressMap ref={map} stops={stops} closePoints={closePoints} store={store} />
       <StatusChip store={store} />
       <ControlsHint store={store} />
+      <AutoplayHint store={store} />
     </div>
   );
 }
