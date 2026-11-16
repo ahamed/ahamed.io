@@ -63,6 +63,35 @@ test.describe('orbit capture', () => {
       .toBe('ok');
   });
 
+  test('the card first appears at the dock, with the body already centred beside it', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await start(page);
+    // Record the Moon dialog on the first animation frame it is open.
+    await page.evaluate(() => {
+      const w = window as unknown as { firstOpen?: { x: number; body: string } };
+      const tick = () => {
+        const el = document.querySelector<HTMLElement>('[data-stop="moon"]');
+        if (el?.dataset.state === 'open' && !w.firstOpen) {
+          w.firstOpen = { x: el.getBoundingClientRect().x, body: el.dataset.bodyRect ?? '' };
+        }
+        if (!w.firstOpen) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    await page.keyboard.press('PageDown');
+    await expect(dialog(page, 'moon')).toHaveAttribute('data-orbit', 'lap', OPEN);
+    const first = await page.evaluate(
+      () => (window as unknown as { firstOpen?: { x: number; body: string } }).firstOpen,
+    );
+    expect(first?.x).toBeLessThan(24);
+    const box = await dialog(page, 'moon').boundingBox();
+    const [x = NaN] = (first?.body ?? '').split(',').map(Number);
+    const dock = (box?.x ?? 0) + (box?.width ?? 0) + 16;
+    expect(Math.abs(x - (dock + (1440 - dock) / 2))).toBeLessThan(1440 * 0.02);
+  });
+
   test('the heliopause holds without a lap', async ({ page }) => {
     await start(page);
     await dot(page, 'Leadership').click();
