@@ -29,7 +29,7 @@ Both are pure functions of the state, so a backward scroll reverses the result.
 
 `captureWeight` is replaced by these two weights.
 
-**D5: Aiming at the target.** The chase camera keeps a unit look direction that turns toward the lap target, damped at λ = 3 (immediate under reduced motion), and looks along it fully. Damping the direction is the change of target (landing on a read stop, after a lap) eases instead of snapping. _Alternative:_ damping a world-space aim point. Rejected: when the old point is behind the camera, the line between two points can pass close to the camera and flip the view. With no target, the existing `aimWeight` toward the nearest body applies.
+**D5: Aiming at the target.** The chase camera keeps a unit look direction that turns toward the lap target, damped at λ = 3 (immediate under reduced motion), and looks along it fully. Damping the direction means a change of target (landing on a read stop, after a lap) eases instead of snapping. _Alternative:_ damping a world-space aim point. Rejected: when the old point is behind the camera, the line between two points can pass close to the camera and flip the view. With no target, the existing `aimWeight` toward the nearest body applies.
 
 **D6: Card at the dock.**
 

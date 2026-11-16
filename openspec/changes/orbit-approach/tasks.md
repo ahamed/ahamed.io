@@ -11,14 +11,14 @@
 
 ## 3. Camera rig
 
-- [ ] 3.1 Red → green: CameraRig blends leave and approach weights in sequence and applies the view offset during the approach (D4)
-- [ ] 3.2 Red → green: the body's screen position is continuous across capture (no more than 2% of the width per frame)
-- [ ] 3.3 Red → green: on release, the camera returns to chase and aims at the next target
+- [x] 3.1 Red → green: CameraRig blends leave and approach weights in sequence and applies the view offset during the approach (D4)
+- [x] 3.2 Red → green: the body's screen position is continuous across capture (no more than 2% of the width per frame)
+- [x] 3.3 Red → green: on release, the camera returns to chase and aims at the next target
 
 ## 4. Card at capture
 
-- [ ] 4.1 Red → green: unread stops and the just-released stop count as size 0 for opening (D6)
-- [ ] 4.2 Red → green: a captured card is written at the dock from its first frame, with no glide
+- [x] 4.1 Red → green: unread stops and the just-released stop count as size 0 for opening (D6)
+- [x] 4.2 Red → green: a captured card is written at the dock from its first frame, with no glide
 
 ## 5. E2E and verification
 

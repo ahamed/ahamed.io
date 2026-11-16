@@ -2,8 +2,10 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, type RefObject } from 'react';
 import { Box3, MathUtils, PerspectiveCamera, Vector3, type Camera, type Group } from 'three';
 import {
+  aimDirInto,
   aimTowardInto,
   aimWeight,
+  approachWeight,
   chasePoseInto,
   type ChasePose,
   orbitPoseInto,
@@ -25,7 +27,7 @@ import {
 } from '../journey/placement';
 import { pointAt, type Route, type Vec3 } from '../journey/route';
 import { stopSizesInto } from '../journey/sizes';
-import { chooseOpenStop, dialogOpacity, dialogScale } from '../journey/visibility';
+import { chooseOpenStop, CLOSE_SIZE, dialogOpacity, dialogScale } from '../journey/visibility';
 import {
   createVoyageContext,
   createVoyageInput,
@@ -33,6 +35,7 @@ import {
   EV_AUTOPLAY_DONE,
   EV_FLIGHT_DONE,
   EV_READ,
+  EV_RELEASED,
   stepVoyageInto,
   type VoyageContext,
   type VoyageInput,
@@ -47,8 +50,12 @@ import { dialogElements, dialogSizes } from '../ui/TerminalDialog/registry';
 import { heliopauseLayout } from './space/heliosphere';
 import { useReducedMotion } from './useReducedMotion';
 
-/** Rate (1/s) the camera blends between the chase and orbit views: about 1.2 s. */
+/** Rate (1/s) the camera eases out of an orbit view after release: about 1.2 s. */
 const CAPTURE_RATE = 3;
+/** Rate (1/s) a docked card fades in at capture and out at release: about 0.3 s. */
+const CARD_FADE_RATE = 12;
+/** Distance ahead (world units) the chase camera's look point sits along its aim direction. */
+const LOOK_DISTANCE = 10;
 /** Screens at least this wide dock the dialog; narrower ones show a bottom sheet. */
 const DOCK_MIN_WIDTH = 768;
 /** Distance (px) the dialog keeps from the viewport edges. */
@@ -115,27 +122,57 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
       journeyRuntime.ship[k] = v.ship[k] ?? 0;
       journeyRuntime.heading[k] = v.heading[k] ?? 0;
     }
-    const weightTarget = holding && state.phase === 'voyage' ? 1 : 0;
-    if (holding) scratch.viewStop = v.stop;
+    // The attitude model reads this: 1 while held in an orbit, eased.
+    const holdTarget = holding && state.phase === 'voyage' ? 1 : 0;
     journeyRuntime.captureWeight = reducedMotion
-      ? weightTarget
-      : damp(journeyRuntime.captureWeight, weightTarget, CAPTURE_RATE, dt);
-    const orbitWeight = smooth(journeyRuntime.captureWeight);
+      ? holdTarget
+      : damp(journeyRuntime.captureWeight, holdTarget, CAPTURE_RATE, dt);
+    // Leaving an orbit eases out of its view; the approach to the lap target frames into its
+    // view by distance, so capture itself moves nothing.
+    if (v.events & EV_RELEASED) {
+      scratch.leaveStop = v.eventStop;
+      scratch.leaveWeight = 1;
+      scratch.fadingStop = v.eventStop;
+    }
+    scratch.leaveWeight = reducedMotion ? 0 : damp(scratch.leaveWeight, 0, CAPTURE_RATE, dt);
+    scratch.voyageGate = reducedMotion
+      ? state.phase === 'voyage'
+        ? 1
+        : 0
+      : damp(scratch.voyageGate, state.phase === 'voyage' ? 1 : 0, CAPTURE_RATE, dt);
+    const target = v.target;
+    const targetBody = target >= 0 ? route.bodies[target] : undefined;
+    const approach =
+      target < 0
+        ? 0
+        : (holding ? 1 : approachWeight(v.position, v.legFrom, scratch.ctx.capture[target] ?? 1)) *
+          smooth(scratch.voyageGate);
     const p = journeyRuntime.position;
 
     chasePoseInto(scratch.pose, route, p);
     const fovY = camera instanceof PerspectiveCamera ? MathUtils.degToRad(camera.fov) : Math.PI / 4;
     stopSizesInto(scratch.sizes, route, scratch.pose.position, fovY);
 
-    // Turn partly toward the nearest body (more on portrait screens) so it stays in view.
-    let nearest = 0;
-    for (let i = 1; i < scratch.sizes.length; i++) {
-      if ((scratch.sizes[i] ?? 0) > (scratch.sizes[nearest] ?? 0)) nearest = i;
+    // Look at the lap target; with none, turn partly toward the nearest body (more on portrait
+    // screens) so it stays in view. The look direction is damped, so a new target eases in.
+    const look = scratch.lookPoint;
+    if (targetBody) {
+      for (let k = 0; k < 3; k++) look[k] = targetBody.position[k] ?? 0;
+    } else {
+      let nearest = 0;
+      for (let i = 1; i < scratch.sizes.length; i++) {
+        if ((scratch.sizes[i] ?? 0) > (scratch.sizes[nearest] ?? 0)) nearest = i;
+      }
+      const nearestBody = route.bodies[nearest];
+      const weight = aimWeight(scratch.sizes[nearest] ?? 0, size.width / Math.max(1, size.height));
+      for (let k = 0; k < 3; k++) look[k] = scratch.pose.lookAt[k] ?? 0;
+      if (nearestBody) aimTowardInto(look, look, nearestBody.position, weight);
     }
-    const nearestBody = route.bodies[nearest];
-    const weight = aimWeight(scratch.sizes[nearest] ?? 0, size.width / Math.max(1, size.height));
-    if (nearestBody) {
-      aimTowardInto(scratch.pose.lookAt, scratch.pose.lookAt, nearestBody.position, weight);
+    aimDirInto(scratch.aimDir, scratch.pose.position, look, dt, reducedMotion || !scratch.aimed);
+    scratch.aimed = true;
+    for (let k = 0; k < 3; k++) {
+      scratch.pose.lookAt[k] =
+        (scratch.pose.position[k] ?? 0) + (scratch.aimDir[k] ?? 0) * LOOK_DISTANCE;
     }
     // The finale: orbit to Voyager's front and look back at Earth, after the body aim.
     pointAt(route, p, scratch.ship);
@@ -149,7 +186,16 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
       introPoseInto(scratch.pose, scratch.intro, t);
       if (t >= 1) state.endIntro();
     }
-    blendOrbitView(scratch, route, camera, size, fovY, orbitWeight);
+    const leave = smooth(scratch.leaveWeight);
+    const leaveArea = blendOrbitPose(scratch, route, scratch.leaveStop, size, fovY, leave);
+    const approachArea = blendOrbitPose(scratch, route, target, size, fovY, approach);
+    applyViewOffset(
+      scratch,
+      camera,
+      size,
+      approach >= leave ? approachArea : leaveArea,
+      Math.max(leave, approach),
+    );
     camera.position.set(...scratch.pose.position);
     camera.lookAt(...scratch.pose.lookAt);
     sky?.current?.position.copy(camera.position);
@@ -159,9 +205,39 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
 
     const currentIndex = scratch.openIndex;
     // Dialogs open only once the voyage has begun and the intro has landed. A captured stop's
-    // dialog stays open for the whole capture.
+    // card opens at the dock and fades in; on release it fades out there before closing. Unread
+    // stops never open by size, and a just-released stop waits until it would have closed.
+    if (holding) {
+      scratch.fadingStop = -1;
+      if (scratch.suppressStop === v.stop) scratch.suppressStop = -1;
+    }
+    if (scratch.fadingStop >= 0 && !holding) {
+      // Faded out by the previous frame: close it now (the release frame stays open).
+      if (scratch.cardFade <= 0.01 && !(v.events & EV_RELEASED)) {
+        scratch.suppressStop = scratch.fadingStop;
+        scratch.fadingStop = -1;
+      } else {
+        scratch.cardFade = reducedMotion ? 0 : damp(scratch.cardFade, 0, CARD_FADE_RATE, dt);
+      }
+    }
+    const suppressed = scratch.suppressStop;
+    if (suppressed >= 0 && (scratch.sizes[suppressed] ?? 0) < CLOSE_SIZE) scratch.suppressStop = -1;
+    const readIds = state.readStops;
+    for (let i = 0; i < scratch.sizes.length; i++) {
+      const open = i !== scratch.suppressStop && readIds.includes(scratch.ctx.ids[i] ?? '');
+      scratch.openSizes[i] = open ? (scratch.sizes[i] ?? 0) : 0;
+    }
+    const docked = holding ? v.stop : scratch.fadingStop;
     const openIndex =
-      phase !== 'voyage' ? null : holding ? v.stop : chooseOpenStop(scratch.sizes, currentIndex);
+      phase !== 'voyage'
+        ? null
+        : docked >= 0
+          ? docked
+          : chooseOpenStop(scratch.openSizes, currentIndex);
+    if (holding && openIndex !== currentIndex) scratch.cardFade = reducedMotion ? 1 : 0;
+    if (holding) {
+      scratch.cardFade = reducedMotion ? 1 : damp(scratch.cardFade, 1, CARD_FADE_RATE, dt);
+    }
     scratch.openIndex = openIndex;
     const openBody = openIndex === null ? undefined : route.bodies[openIndex];
     if (openIndex !== currentIndex) state.setOpenStop(openBody?.id ?? null);
@@ -202,7 +278,7 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
       (openBody.footprint * size.height) / (2 * Math.tan(fovY / 2) * Math.max(distance, 1e-3));
     voyagerRectInto(scratch, voyager.current, camera, size);
 
-    const dockShare = openIndex === scratch.viewStop ? orbitWeight : 0;
+    const dockShare = openIndex === docked ? 1 : 0;
     const scale = dialogScale(bodySize) + (1 - dialogScale(bodySize)) * dockShare;
     const measured = dialogSizes.get(openBody.id);
     const base = measured && measured.w > 0 ? measured : FALLBACK_DIALOG;
@@ -240,7 +316,7 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
     writeVar(element, '--x', x + (scratch.dock.x - x) * dockShare, 'px', scratch.last, 0);
     writeVar(element, '--y', y + (scratch.dock.y - y) * dockShare, 'px', scratch.last, 1);
     writeVar(element, '--scale', scale, '', scratch.last, 2);
-    writeVar(element, '--opacity', opacity + (1 - opacity) * dockShare, '', scratch.last, 3);
+    writeVar(element, '--opacity', dockShare ? scratch.cardFade : opacity, '', scratch.last, 3);
     writeRect(element, scratch.voyagerRect, scratch);
     writeBody(element, disc, scratch);
   });
@@ -249,27 +325,20 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
 }
 
 /**
- * Blends the chase pose in `scratch.pose` toward the orbit view of `scratch.viewStop` by
- * `weight`, and shifts the projection so the body sits in the middle of the space the dialog
+ * Blends the chase pose in `scratch.pose` toward the orbit view of `stop` by `weight`, and
+ * returns the viewing area that frames it: the body sits in the middle of the space the dialog
  * (docked on wide screens, a bottom sheet on narrow ones) leaves free.
  */
-function blendOrbitView(
+function blendOrbitPose(
   scratch: Scratch,
   route: Route,
-  camera: Camera,
+  stop: number,
   size: { width: number; height: number },
   fovY: number,
   weight: number,
-): void {
-  const perspective = camera instanceof PerspectiveCamera ? camera : null;
-  const body = route.bodies[scratch.viewStop];
-  if (weight <= 0 || !body) {
-    if (scratch.offsetApplied) {
-      perspective?.clearViewOffset();
-      scratch.offsetApplied = false;
-    }
-    return;
-  }
+): ViewArea | null {
+  const body = stop >= 0 ? route.bodies[stop] : undefined;
+  if (weight <= 0 || !body) return null;
   const measured = dialogSizes.get(body.id);
   const base = measured && measured.w > 0 ? measured : FALLBACK_DIALOG;
   const wide = size.width >= DOCK_MIN_WIDTH;
@@ -278,8 +347,14 @@ function blendOrbitView(
   covered.sheet = wide ? 0 : base.h;
   scratch.viewport.w = size.width;
   scratch.viewport.h = size.height;
-  const area = viewAreaInto(scratch.area, scratch.viewport, covered, fovY, weight);
-  const radius = scratch.ctx.radius[scratch.viewStop] ?? body.radius;
+  const area = viewAreaInto(
+    stop === scratch.leaveStop ? scratch.leaveArea : scratch.area,
+    scratch.viewport,
+    covered,
+    fovY,
+    weight,
+  );
+  const radius = scratch.ctx.radius[stop] ?? body.radius;
   const orbit = orbitPoseInto(scratch.orbitPose, body, radius, area.fovY, area.aspect);
   for (let i = 0; i < 3; i++) {
     const from = scratch.pose.position[i] ?? 0;
@@ -287,17 +362,35 @@ function blendOrbitView(
     scratch.pose.position[i] = from + ((orbit.position[i] ?? 0) - from) * weight;
     scratch.pose.lookAt[i] = look + ((orbit.lookAt[i] ?? 0) - look) * weight;
   }
-  if (perspective) {
-    perspective.setViewOffset(
-      size.width,
-      size.height,
-      area.offsetX,
-      area.offsetY,
-      size.width,
-      size.height,
-    );
-    scratch.offsetApplied = true;
+  return area;
+}
+
+/** Applies `area`'s view offset (or clears it when no orbit view is blended in). */
+function applyViewOffset(
+  scratch: Scratch,
+  camera: Camera,
+  size: { width: number; height: number },
+  area: ViewArea | null,
+  weight: number,
+): void {
+  const perspective = camera instanceof PerspectiveCamera ? camera : null;
+  if (!perspective) return;
+  if (!area || weight <= 0) {
+    if (scratch.offsetApplied) {
+      perspective.clearViewOffset();
+      scratch.offsetApplied = false;
+    }
+    return;
   }
+  perspective.setViewOffset(
+    size.width,
+    size.height,
+    area.offsetX,
+    area.offsetY,
+    size.width,
+    size.height,
+  );
+  scratch.offsetApplied = true;
 }
 
 /** Shows the caption and card, and tells the bracket where the Pale Blue Dot is on screen. */
@@ -326,8 +419,24 @@ interface Scratch {
   ctx: VoyageContext;
   voyage: VoyageState;
   voyageInput: VoyageInput;
-  /** The stop the orbit view frames (kept while blending back to the chase view). */
-  viewStop: number;
+  /** The stop last released, whose orbit view eases out by `leaveWeight`. */
+  leaveStop: number;
+  leaveWeight: number;
+  leaveArea: ViewArea;
+  /** Eases the orbit view in after the intro lands. */
+  voyageGate: number;
+  /** Unit look direction of the chase camera, damped toward the lap target. */
+  aimDir: Vec3;
+  aimed: boolean;
+  lookPoint: Vec3;
+  /** A released stop whose docked card is fading out, or -1. */
+  fadingStop: number;
+  /** A released stop kept closed until it would have closed by size, or -1. */
+  suppressStop: number;
+  /** The docked card's opacity. */
+  cardFade: number;
+  /** Sizes with unread and suppressed stops zeroed, for choosing which dialog opens. */
+  openSizes: number[];
   orbitPose: ChasePose;
   area: ViewArea;
   /** Whether the camera has a view offset applied. */
@@ -374,7 +483,17 @@ function createScratch(route: Route, voyage?: VoyageState): Scratch {
     ctx,
     voyage: voyage ?? createVoyageState(ctx),
     voyageInput: createVoyageInput(),
-    viewStop: 0,
+    leaveStop: -1,
+    leaveWeight: 0,
+    leaveArea: { aspect: 1, fovY: 1, offsetX: 0, offsetY: 0 },
+    voyageGate: 0,
+    aimDir: [0, 0, -1],
+    aimed: false,
+    lookPoint: [0, 0, 0],
+    fadingStop: -1,
+    suppressStop: -1,
+    cardFade: 0,
+    openSizes: route.bodies.map(() => 0),
     orbitPose: { position: [0, 0, 0], lookAt: [0, 0, 0] },
     area: { aspect: 1, fovY: 1, offsetX: 0, offsetY: 0 },
     offsetApplied: false,

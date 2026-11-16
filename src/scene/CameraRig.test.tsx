@@ -155,6 +155,8 @@ describe('CameraRig dialog placement', () => {
     dialogElements.set('earth', element);
     dialogSizes.set('earth', DIALOG);
     const store = createJourneyStore(points, { phase: 'voyage' });
+    // Only a read stop places its card near the body.
+    store.getState().markRead('earth');
     const voyager = createRef<Group>();
     const size = { width: 0, height: 0 };
     function CaptureSize() {
@@ -226,6 +228,7 @@ describe('CameraRig dialog placement beside a giant', () => {
       dialogSizes.set(id, DIALOG);
       journeyRuntime.position = cp;
       const store = createJourneyStore(points, { phase: 'voyage' });
+      store.getState().markRead(id);
       const state = { camera: null as Camera | null, width: 0, height: 0 };
       function Capture() {
         const three = useThree();
@@ -549,6 +552,145 @@ describe('CameraRig orbit capture', () => {
     await frames(150);
     const camera = three.camera as PerspectiveCamera;
     expect(camera.view?.enabled ?? false).toBe(false);
+    // Back in the chase view, aimed at the next lap target.
+    const mars = route.bodies[MOON + 1];
+    if (!mars) throw new Error('no mars');
+    const at = new Vector3(...mars.position).project(camera);
+    expect(Math.abs(at.x)).toBeLessThan(0.005);
     await done();
+  });
+});
+
+describe('CameraRig approach', () => {
+  const DIALOG = { w: 416, h: 260 };
+  const MOON = 1;
+
+  /** A free voyage at `p` moving forward, with the given stops read. */
+  async function approaching(p: number, read: string[], stops: string[]) {
+    const elements = stops.map((id) => {
+      const element = document.createElement('section');
+      dialogElements.set(id, element);
+      dialogSizes.set(id, DIALOG);
+      return element;
+    });
+    const store = createJourneyStore(points, { phase: 'voyage', storage: null });
+    for (const id of read) store.getState().markRead(id);
+    const voyage = placed(p);
+    const voyager = createRef<Group>();
+    const three = { camera: null as Camera | null, width: 0, height: 0 };
+    function Capture() {
+      const state = useThree();
+      useEffect(() => {
+        three.camera = state.camera;
+        three.width = state.size.width;
+        three.height = state.size.height;
+      }, [state]);
+      return null;
+    }
+    const renderer = await ReactThreeTestRenderer.create(
+      <>
+        <group ref={voyager} />
+        <Capture />
+        <CameraRig route={route} store={store} voyager={voyager} voyage={voyage} />
+      </>,
+    );
+    const frames = async (count: number, delta = 1 / 60) => {
+      await ReactThreeTestRenderer.act(async () => {
+        await renderer.advanceFrames(count, delta);
+      });
+    };
+    const screenX = (i: number) => {
+      const body = route.bodies[i];
+      const camera = three.camera;
+      if (!body || !camera) return NaN;
+      const v = new Vector3(...body.position).project(camera);
+      return ((v.x + 1) / 2) * three.width;
+    };
+    const screenY = (i: number) => {
+      const body = route.bodies[i];
+      const camera = three.camera;
+      if (!body || !camera) return NaN;
+      const v = new Vector3(...body.position).project(camera);
+      return ((1 - v.y) / 2) * three.height;
+    };
+    const done = async () => {
+      await renderer.unmount();
+      for (const id of stops) {
+        dialogElements.delete(id);
+        dialogSizes.delete(id);
+      }
+    };
+    return { store, voyage, elements, three, frames, screenX, screenY, done };
+  }
+
+  it('centres the lap target from afar', async () => {
+    const JUPITER = ctx.ids.indexOf('jupiter');
+    const from = points[JUPITER - 1] ?? 0;
+    const to = points[JUPITER] ?? 0;
+    const r = await approaching(from + (to - from) * 0.5, ctx.ids.slice(0, JUPITER), []);
+    await r.frames(120);
+    // Halfway along the leg, still in the chase view: Jupiter is at the screen centre.
+    expect(Math.abs(r.screenX(JUPITER) - r.three.width / 2)).toBeLessThan(r.three.width * 0.01);
+    await r.done();
+  });
+
+  it('has the target centred beside the dock at capture, with no swing across it', async () => {
+    const cp = points[MOON] ?? 0;
+    const r = await approaching(cp - (cp - (points[0] ?? 0)) * 0.6, ['earth'], ['moon']);
+    r.voyage.speed = ctx.cruise;
+    r.store.setState({ heldKey: 1 });
+    await r.frames(2);
+    let prev = r.screenX(MOON);
+    let atCapture = NaN;
+    for (let i = 0; i < 900 && Number.isNaN(atCapture); i++) {
+      await r.frames(1);
+      const x = r.screenX(MOON);
+      expect(Math.abs(x - prev)).toBeLessThan(r.three.width * 0.02);
+      prev = x;
+      if (r.voyage.mode === 'captured') {
+        atCapture = x;
+        expect(Math.abs(r.screenY(MOON) - r.three.height / 2)).toBeLessThan(r.three.height * 0.05);
+      }
+    }
+    const dock = DIALOG.w + 32;
+    const centre = dock + (r.three.width - dock) / 2;
+    expect(Math.abs(atCapture - centre)).toBeLessThan(r.three.width * 0.05);
+    // And it stays there through the first second of the lap: no swing after capture.
+    for (let i = 0; i < 60; i++) {
+      await r.frames(1);
+      expect(Math.abs(r.screenX(MOON) - centre)).toBeLessThan(r.three.width * 0.05);
+      expect(Math.abs(r.screenY(MOON) - r.three.height / 2)).toBeLessThan(r.three.height * 0.05);
+    }
+    await r.done();
+  });
+
+  it('opens no card for an unread stop on the approach', async () => {
+    const cp = points[MOON] ?? 0;
+    const r = await approaching(cp - 0.0005, ['earth'], ['moon']);
+    await r.frames(30);
+    expect(r.store.getState().openStopId).toBeNull();
+    await r.done();
+  });
+
+  it('writes a captured card at the dock from its first frame and fades it in', async () => {
+    const cp = points[MOON] ?? 0;
+    const r = await approaching(cp - 1e-5, ['earth'], ['moon']);
+    r.voyage.speed = ctx.cruise * 0.05;
+    const [element] = r.elements;
+    if (!element) throw new Error('no element');
+    let first = true;
+    for (let i = 0; i < 60; i++) {
+      await r.frames(1);
+      if (r.store.getState().openStopId !== 'moon') continue;
+      const x = Number.parseFloat(element.style.getPropertyValue('--x'));
+      expect(x).toBeCloseTo(16, 0);
+      if (first) {
+        expect(Number(element.style.getPropertyValue('--opacity'))).toBeLessThan(0.5);
+        first = false;
+      }
+    }
+    expect(first).toBe(false);
+    expect(Number(element.style.getPropertyValue('--opacity'))).toBeCloseTo(1, 2);
+    await r.done();
   });
 });
