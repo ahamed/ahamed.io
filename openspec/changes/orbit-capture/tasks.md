@@ -130,11 +130,11 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
   - The heliopause is `drift`.
 - [x] 7.3 Update `e2e/hud.spec.ts` (map jump from inside an orbit, the autoplay ignored-scroll hint) and the autoplay E2E (it cruises Earth → Moon, with no hop).
 - [x] 7.4 Update `e2e/reduced-motion.spec.ts`: the hold with no lap, the full text at once, and a forward scroll releasing.
-- [ ] 7.5 Run `pnpm e2e`, including `perf.spec.ts`, and check the budgets are unchanged at the Saturn orbit view.
+- [x] 7.5 Run `pnpm e2e`, including `perf.spec.ts`, and check the budgets are unchanged at the Saturn orbit view.
 
 ## 8. Gate and verification
 
-- [ ] 8.1 Run `pnpm lint && pnpm typecheck && pnpm test && pnpm e2e && pnpm build && pnpm size`.
+- [x] 8.1 Run `pnpm lint && pnpm typecheck && pnpm test && pnpm e2e && pnpm build && pnpm size`.
 - [ ] 8.2 Do manual QA in `pnpm dev`:
   - laps at Earth, a small moon, Jupiter and Saturn feel smooth
   - the scroll speed-up feels capped
@@ -146,4 +146,4 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
   - reduced motion behaves as specified
   - phone width works
   - tune the constants in the Open Questions
-- [ ] 8.3 Make small focused commits on `dev`.
+- [x] 8.3 Make small focused commits on `dev`.

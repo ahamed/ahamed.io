@@ -184,3 +184,16 @@ This is a single client-side change on `dev`, with no data migration. Rolling ba
 ## Open Questions
 
 - The exact tick timbre and the slingshot constants (`k`, the boost) will be tuned by ear and by eye during manual QA. Those values don't change any spec.
+
+## Implementation notes (deviations found while building)
+
+- **Braking and accelerating (D5b).** These were added because cruise speed cannot be absorbed by a lap. The scroll-mode coast uses `(v_exit + A·t)·e^(−k·t)` instead of D5's formula.
+- **Reduced-motion hold.** A forward scroll releases the hold only after input has gone idle once since the hold began. Otherwise the scroll that brought Voyager in would skip the hold at once.
+- **Typewriter flag.** `DialogLayer` passes `typing` to `TerminalDialog`: true while the store's `orbit` is `lap` or `drift` for that stop. Every other open dialog shows its full text. The boot panel keeps the time-based `useTypewriter`.
+- **Attitude (D8).** A linear 2.5 s turn progress eased by smoothstep replaced the damped slerp with rate limit, because a near-180° turn otherwise starts with a jolt. The body-facing attitude is recomputed every frame, so it tracks with no lag. Turn start and end each fire a yaw puff and the hiss.
+- **HUD and jumps.**
+  - The HUD and the map receive the capture points instead of the close points, so the telemetry and the marker hold exactly at a lap.
+  - The controls hint's "at Earth" check moved from 1e-3 to 5e-3, because Voyager rests at Earth's capture point (about 0.00115).
+  - A repeated PageUp/PageDown steps on from a running jump's destination.
+- **E2E hooks.** Besides `data-orbit` and `data-read`, the rig publishes the body's screen disc as `data-body-rect` ("x,y,r").
+- **Bundle budget.** The Voyage chunk budget was raised from 37,200 B to 38,000 B, agreed with the owner.
