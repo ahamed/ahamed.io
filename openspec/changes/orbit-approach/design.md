@@ -37,6 +37,10 @@ Both are pure functions of the state, so a backward scroll reverses the result.
 - **Placement:** a captured card is written at the dock rect at scale 1, with no near-body glide.
 - **Fades:** the fade-in uses the dialog's existing 400 ms opacity transition on `data-state`, which reduced motion already disables. The fade-out happens at the dock because the position isn't rewritten after close.
 
+**D7: The frame-in rides with Voyager.** On the approach, the orbit camera position is shifted by Voyager's route point minus the target's capture point, and the look-at stays on the body. At the capture point the shift is zero, so the view is exactly the orbit view. _Why:_ blending toward the body-fixed orbit position while Voyager is still behind it carried the camera past Voyager, and Voyager vanished for about a second (seen in visual QA).
+
+**D8: Implementation notes.** The rig calls `camera.updateMatrixWorld()` after `lookAt`, so the body and Voyager rects published that frame use that frame's camera, not the last render's. Only the launch orbit (stop 0) waits for the intro gate. Home lands on Earth's capture point, because an unread Earth no longer opens its card by size (journey-navigation delta).
+
 ## Risks / Trade-offs
 
 - [Close moons (Phobos to Deimos) have short legs, so the frame-in may overlap the leave blend] → The two weights are mixed toward different poses in sequence, so both blends stay continuous; visual QA covers it.

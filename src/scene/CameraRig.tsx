@@ -189,7 +189,9 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
     }
     const leave = smooth(scratch.leaveWeight);
     const leaveArea = blendOrbitPose(scratch, route, scratch.leaveStop, size, fovY, leave);
-    const approachArea = blendOrbitPose(scratch, route, target, size, fovY, approach);
+    // On the way in, the orbit view rides with Voyager (relative to its route point), so the
+    // camera never overtakes it; at the capture point this is exactly the orbit view.
+    const approachArea = blendOrbitPose(scratch, route, target, size, fovY, approach, !holding);
     applyViewOffset(
       scratch,
       camera,
@@ -339,6 +341,7 @@ function blendOrbitPose(
   size: { width: number; height: number },
   fovY: number,
   weight: number,
+  riding = false,
 ): ViewArea | null {
   const body = stop >= 0 ? route.bodies[stop] : undefined;
   if (weight <= 0 || !body) return null;
@@ -359,6 +362,15 @@ function blendOrbitPose(
   );
   const radius = scratch.ctx.radius[stop] ?? body.radius;
   const orbit = orbitPoseInto(scratch.orbitPose, body, radius, area.fovY, area.aspect);
+  if (riding) {
+    // Shift the camera by Voyager's distance from the capture point along the route.
+    pointAt(route, scratch.ctx.capture[stop] ?? 0, scratch.capturePoint);
+    pointAt(route, scratch.voyage.position, scratch.routePoint);
+    for (let i = 0; i < 3; i++) {
+      orbit.position[i] =
+        (orbit.position[i] ?? 0) + (scratch.routePoint[i] ?? 0) - (scratch.capturePoint[i] ?? 0);
+    }
+  }
   for (let i = 0; i < 3; i++) {
     const from = scratch.pose.position[i] ?? 0;
     const look = scratch.pose.lookAt[i] ?? 0;
@@ -432,6 +444,8 @@ interface Scratch {
   aimDir: Vec3;
   aimed: boolean;
   lookPoint: Vec3;
+  capturePoint: Vec3;
+  routePoint: Vec3;
   /** A released stop whose docked card is fading out, or -1. */
   fadingStop: number;
   /** A released stop kept closed until it would have closed by size, or -1. */
@@ -493,6 +507,8 @@ function createScratch(route: Route, voyage?: VoyageState): Scratch {
     aimDir: [0, 0, -1],
     aimed: false,
     lookPoint: [0, 0, 0],
+    capturePoint: [0, 0, 0],
+    routePoint: [0, 0, 0],
     fadingStop: -1,
     suppressStop: -1,
     cardFade: 0,

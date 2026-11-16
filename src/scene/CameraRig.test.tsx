@@ -647,6 +647,13 @@ describe('CameraRig approach', () => {
       const x = r.screenX(MOON);
       expect(Math.abs(x - prev)).toBeLessThan(r.three.width * 0.02);
       prev = x;
+      // Voyager stays in view the whole way in.
+      const camera = r.three.camera;
+      if (!camera) throw new Error('no camera');
+      const ship = new Vector3(...journeyRuntime.ship).project(camera);
+      expect(Math.abs(ship.x)).toBeLessThan(1);
+      expect(Math.abs(ship.y)).toBeLessThan(1);
+      expect(ship.z).toBeLessThan(1);
       if (r.voyage.mode === 'captured') {
         atCapture = x;
         expect(Math.abs(r.screenY(MOON) - r.three.height / 2)).toBeLessThan(r.three.height * 0.05);
