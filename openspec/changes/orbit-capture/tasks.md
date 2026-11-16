@@ -78,9 +78,9 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
 
 ## 4. Voyager attitude
 
-- [ ] 4.1 TDD `attitudeTowardInto(outQuat, dir)` in `orientation.ts`: the dish axis ends up along `dir` within 0.5°, with no roll (the bus's up vector stays in the vertical plane), and it is the cruise orientation for −Z.
-- [ ] 4.2 TDD an eased attitude follower (pure, in `motion.ts` or a new `attitude.ts`): damped and rate-limited to about 45°/s, with no jump, and a turn-start and turn-end event for the puffs.
-- [ ] 4.3 Wire `Voyager.tsx`:
+- [x] 4.1 TDD `attitudeTowardInto(outQuat, dir)` in `orientation.ts`: the dish axis ends up along `dir` within 0.5°, with no roll (the bus's up vector stays in the vertical plane), and it is the cruise orientation for −Z.
+- [x] 4.2 TDD an eased attitude follower (pure, in `motion.ts` or a new `attitude.ts`): damped and rate-limited to about 45°/s, with no jump, and a turn-start and turn-end event for the puffs.
+- [x] 4.3 Wire `Voyager.tsx`:
   - The orientation group follows the target (body while captured, cruise otherwise, Earth blended by `finaleTurn` in the finale).
   - The deadband stays on the inner group.
   - Turn events trigger puffs and the hiss through `thrusterLink`.
