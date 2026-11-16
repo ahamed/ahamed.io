@@ -22,6 +22,6 @@
 
 ## 5. E2E and verification
 
-- [ ] 5.1 Update E2E specs that expect approach cards or the glide, and add an approach-continuity and appears-at-dock spec
-- [ ] 5.2 Quality gate: `pnpm lint && pnpm typecheck && pnpm test && pnpm e2e`, `pnpm build && pnpm size`
+- [x] 5.1 Update E2E specs that expect approach cards or the glide, and add an approach-continuity and appears-at-dock spec
+- [x] 5.2 Quality gate: `pnpm lint && pnpm typecheck && pnpm test && pnpm e2e`, `pnpm build && pnpm size`
 - [ ] 5.3 Manual QA in `pnpm dev`: approach to Earth, the Moon, Phobos and Deimos, Saturn and the heliopause, on desktop and phone

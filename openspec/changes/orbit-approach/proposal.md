@@ -23,6 +23,7 @@ None.
 
 - `orbit-capture`: Capture never misses a capture point. The camera aims at the lap target and frames in before capture. The card appears at capture already docked, instead of gliding to the dock.
 - `stop-dialog`: Unread stops no longer open their dialog by on-screen size; they open only when captured. The near-body placement applies only to read stops.
+- `journey-navigation`: Home jumps to Earth's capture point, where the voyage begins, rather than progress 0, so an unread Earth captures again.
 - `voyage-scene`: The chase view's look direction turns toward the lap target, instead of only partly toward the nearest body.
 
 ## Impact

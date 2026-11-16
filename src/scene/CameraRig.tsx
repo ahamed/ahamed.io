@@ -146,7 +146,8 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
       target < 0
         ? 0
         : (holding ? 1 : approachWeight(v.position, v.legFrom, scratch.ctx.capture[target] ?? 1)) *
-          smooth(scratch.voyageGate);
+          // Only the launch orbit waits for the intro to land; later targets frame in by distance.
+          (target === 0 ? smooth(scratch.voyageGate) : 1);
     const p = journeyRuntime.position;
 
     chasePoseInto(scratch.pose, route, p);
@@ -198,6 +199,8 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
     );
     camera.position.set(...scratch.pose.position);
     camera.lookAt(...scratch.pose.lookAt);
+    // Project this frame's bodies with this frame's camera, not the last render's.
+    camera.updateMatrixWorld();
     sky?.current?.position.copy(camera.position);
     if (voyager.current) voyager.current.position.set(...journeyRuntime.ship);
     plasmaLink.set(plasmaGain(scratch.ship[2], scratch.plasma));

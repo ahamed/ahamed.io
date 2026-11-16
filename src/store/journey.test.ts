@@ -80,12 +80,12 @@ describe('journey store', () => {
       expect(three.getState().flight?.from).toBe(0.1);
     });
 
-    it('fly to the start and the end', () => {
+    it('fly to the end, and back to Earth’s capture point at the start', () => {
       const store = make();
       store.getState().goToEnd(0);
       expect(store.getState().flight?.to).toBe(1);
       store.getState().goToStart(0);
-      expect(store.getState().flight?.to).toBe(0);
+      expect(store.getState().flight?.to).toBe(0.001);
     });
 
     it('are instant flights under reduced motion', () => {

@@ -190,7 +190,9 @@ export function createJourneyStore(
       },
       goToStart: (now, reduced = false) => {
         if (!accept()) return;
-        jump(0, now, reduced ? 0 : flightMs(journeyRuntime.position));
+        // The start is Earth's capture point, where the voyage begins in orbit.
+        const to = points[0] ?? 0;
+        jump(to, now, reduced ? 0 : flightMs(journeyRuntime.position - to));
       },
       goToEnd: (now, reduced = false) => {
         if (!accept()) return;
