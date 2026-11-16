@@ -54,8 +54,9 @@ describe('ControlsHint', () => {
     pointer(true);
     const { store, wait } = setup();
     act(() => {
-      store.getState().step(1, Date.now());
-      store.getState().step(1, Date.now());
+      store.getState().keyHold(1, true, Date.now());
+      store.getState().keyHold(1, false, Date.now());
+      store.getState().keyHold(1, true, Date.now());
     });
     wait(600);
     expect(hint()).not.toHaveAttribute('data-visible');

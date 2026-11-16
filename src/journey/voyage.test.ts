@@ -73,6 +73,17 @@ describe('the voyage starts in Earth orbit', () => {
   });
 });
 
+describe('reduced motion at the start', () => {
+  it('turns the Earth orbit into a hold', () => {
+    const r = setup((_, input) => {
+      input.reduced = true;
+    });
+    run(r, 1 / 60);
+    expect(r.s.mode).toBe('hold');
+    expect(r.s.stop).toBe(0);
+  });
+});
+
 describe('capture', () => {
   it('captures a forward arrival at an unread capture point', () => {
     const r = setup((s, input) => {

@@ -43,29 +43,29 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
   - The heliopause → `drift`: progress moves forward slowly, with no circle, for `lapMs`.
   - Reduced motion → `hold` for `readingMs`. A forward input releases at once, marks the stop read, and skips the coast.
   - An allocation-free check: the step runs 10,000 times with no new objects, using a spy on a pooled state.
-- [ ] 2.2 TDD the store (`src/store/journey.ts`):
+- [x] 2.2 TDD the store (`src/store/journey.ts`):
   - Replace `target`, `nudge`, `step`, `snapTo` and `autoplayTo` with `throttle(dir, intensity, now)`, `keyHold(dir, down, now)` and `ignoredInput(now)`.
   - Add `mode`, `capturedStopId`, `readStops` (set only on transitions) and `ignoredHintAt`.
   - Jumps (`goToStop`, `goToStart`, `goToEnd`, `flyToStop`, `flyBack`) release the capture and turn autoplay off. `flyBack` resets `readStops`.
   - `journeyRuntime` gains `ship`, `heading`, `orbitClock`, `revealed`, `captureWeight` and `boost`.
-- [ ] 2.3 TDD the input hooks (`useWheelInput`, `useKeyboardInput`, `useTouchInput`, `input.test.tsx`):
+- [x] 2.3 TDD the input hooks (`useWheelInput`, `useKeyboardInput`, `useTouchInput`, `input.test.tsx`):
   - The wheel reports an event-rate intensity.
   - ↑/↓ use keydown→keyup hold with no repeat stutter.
   - Touch reports finger velocity.
   - While autoplay is on, all of them call `ignoredInput`.
   - PageUp/PageDown, Home and End still jump.
-- [ ] 2.4 Delete `snap.ts` and `finaleSnap`, their tests, and their imports. Keep `stops.ts` ranges for the active stop.
-- [ ] 2.5 Start the voyage captured at Earth when the intro ends (`endIntro`, and `begin` with reduced motion). Unit test it.
+- [x] 2.4 Delete `snap.ts` and `finaleSnap`, their tests, and their imports. Keep `stops.ts` ranges for the active stop.
+- [x] 2.5 Start the voyage captured at Earth when the intro ends (`endIntro`, and `begin` with reduced motion). Unit test it.
 
 ## 3. Camera rig: capture, orbit view, docked dialog
 
-- [ ] 3.1 TDD `orbitPoseInto` in `src/journey/camera.ts`:
+- [x] 3.1 TDD `orbitPoseInto` in `src/journey/camera.ts`:
   - The elevation is 35° behind the orbit.
   - The distance fits R · 1.2 within the viewing area for a landscape and a portrait aspect.
   - The look-at is the body's centre.
-- [ ] 3.2 TDD `viewOffsetFor(viewport, dockWidth | sheetHeight, weight)` for landscape (horizontal shift) and narrow (vertical shift) screens. Check that a body at the look-at projects to the centre of the viewing area under the offset.
-- [ ] 3.3 TDD `dockRectInto` in `placement.ts`: the left margin, vertically centred, clear of the body's disc when the body is centred in the viewing area.
-- [ ] 3.4 Wire `CameraRig.tsx`:
+- [x] 3.2 TDD `viewOffsetFor(viewport, dockWidth | sheetHeight, weight)` for landscape (horizontal shift) and narrow (vertical shift) screens. Check that a body at the look-at projects to the centre of the viewing area under the offset.
+- [x] 3.3 TDD `dockRectInto` in `placement.ts`: the left margin, vertically centred, clear of the body's disc when the body is centred in the viewing area.
+- [x] 3.4 Wire `CameraRig.tsx`:
   - Call `stepVoyageInto` first.
   - Place Voyager at `journeyRuntime.ship`.
   - Damp `captureWeight` (a cut under reduced motion).
@@ -74,7 +74,7 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
   - Force the captured dialog open at full scale and opacity, blended into the docked placement.
   - Set `data-orbit` (`none|lap|drift|hold|coast`) and `data-read` on the dialog element for E2E.
   - Extend `CameraRig.test.tsx` for the capture → lap → coast frames.
-- [ ] 3.5 Check that the telemetry, the signal delay and the map marker read the held `position` during a lap. Add a unit test or an assertion in `telemetry.test.ts` if needed.
+- [x] 3.5 Check that the telemetry, the signal delay and the map marker read the held `position` during a lap. Add a unit test or an assertion in `telemetry.test.ts` if needed.
 
 ## 4. Voyager attitude
 
@@ -113,7 +113,7 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
   - Read stops are passed.
   - It lands at the end with `min(cruise, 3·(1−p))` and turns autoplay off.
   - Turning it off mid-lap leaves scroll-mode rules in charge.
-- [ ] 6.2 Delete the `useAutoplay` timers and the old `autoplayNext`/`dwellMs`, and update `useAutoplay.test.ts`, or remove it if it is now empty.
+- [x] 6.2 Delete the `useAutoplay` timers and the old `autoplayNext`/`dwellMs`, and update `useAutoplay.test.ts`, or remove it if it is now empty.
 - [ ] 6.3 Add the "Autoplay on · Space to stop" HUD hint, driven by `ignoredHintAt` and shown for 1.5 s. Update the controls hint text to the new wording. Add unit tests.
 
 ## 7. E2E, reduced motion and phones

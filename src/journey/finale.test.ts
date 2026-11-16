@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChasePose } from './camera';
-import {
-  FINALE_SNAP_FROM,
-  finalePoseInto,
-  finaleReveal,
-  finaleSnap,
-  finaleTurn,
-  TURN_END,
-  TURN_START,
-} from './finale';
+import { finalePoseInto, finaleReveal, finaleTurn, TURN_END, TURN_START } from './finale';
 import type { Vec3 } from './route';
 
 const HELIOPAUSE_CP = 0.8;
@@ -36,20 +28,6 @@ describe('finale phases', () => {
       turn = finaleTurn(p);
       reveal = finaleReveal(p);
     }
-  });
-});
-
-describe('finaleSnap', () => {
-  it('snaps to the end from anywhere in the turn', () => {
-    expect(finaleSnap(FINALE_SNAP_FROM)).toBe(1);
-    expect(finaleSnap(0.9)).toBe(1);
-    expect(finaleSnap(0.999)).toBe(1);
-  });
-
-  it('leaves the heliopause stop and the end alone', () => {
-    expect(finaleSnap(HELIOPAUSE_CP)).toBeNull();
-    expect(finaleSnap(0.85)).toBeNull();
-    expect(finaleSnap(1)).toBeNull();
   });
 });
 

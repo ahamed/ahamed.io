@@ -1,39 +1,46 @@
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 import { STOPS } from '../content/journey';
-import { ARROW_STEP_FRACTION } from '../journey/input';
-import { applyDelta, clampProgress } from '../journey/progress';
 import { FLY_BACK_MS, flightMs } from '../journey/flyTo';
-import { buildRoute } from '../journey/route';
+import { buildRoute, type Vec3 } from '../journey/route';
 import { neighbourTarget } from '../journey/stops';
+import { inputActive, KEY_INTENSITY } from '../journey/throttle';
+import { createVoyageContext, type Flight } from '../journey/voyage';
+
+/** What Voyager is doing at a stop, for the dialog and E2E: mirrors the voyage step's mode. */
+export type Orbit = 'none' | 'lap' | 'drift' | 'hold' | 'coast';
 
 export interface JourneyState {
-  /** Where input wants the voyage to be (0..1). The shown position eases toward it. */
-  target: number;
-  /** `performance.now()` of the last user input, for the snap idle check. */
+  /** `performance.now()` of the last wheel/touch throttle event. */
   lastInputAt: number;
+  /** Direction of the last wheel/touch throttle event. */
+  throttleDir: -1 | 1;
+  /** Intensity (0..1) of the last throttle input; speeds up the orbit clock. */
+  intensity: number;
+  /** A held ↑/↓ key's direction, or 0. Holds the throttle until released. */
+  heldKey: -1 | 0 | 1;
   openStopId: string | null;
   audioUnlocked: boolean;
-  /** A running flight (Back to Earth or a map jump), or null. Any input cancels it. */
+  /** A running jump (map, PageUp/PageDown, Home/End, Back to Earth), or null. */
   flight: Flight | null;
   /** Whether the finale's caption and contact card are showing. */
   finaleShown: boolean;
-  nudge: (delta: number, now: number) => void;
-  step: (dir: 1 | -1, now: number) => void;
-  goToStop: (dir: 1 | -1, now: number) => void;
-  goToStart: (now: number) => void;
-  goToEnd: (now: number) => void;
-  snapTo: (target: number) => void;
+  /** Wheel or touch throttle; ignored (with a hint) during autoplay. */
+  throttle: (dir: -1 | 1, intensity: number, now: number) => void;
+  /** ↑/↓ pressed or released; ignored (with a hint) during autoplay. */
+  keyHold: (dir: -1 | 1, down: boolean, now: number) => void;
+  /** Jumps to the next or previous stop's capture point. */
+  goToStop: (dir: 1 | -1, now: number, reduced?: boolean) => void;
+  goToStart: (now: number, reduced?: boolean) => void;
+  goToEnd: (now: number, reduced?: boolean) => void;
   setOpenStop: (id: string | null) => void;
   setAudioUnlocked: () => void;
-  /** Starts the rewind to the start; under reduced motion jumps there instead. */
+  /** Rewinds to the first stop and marks every stop unread; instant under reduced motion. */
   flyBack: (now: number, reduced: boolean) => void;
-  /** Moves the target for the rewind; counts as input so snapping waits. */
-  flyTo: (target: number, now: number) => void;
   endFlight: () => void;
-  /** Map jump to stop `index`; manual input. Instant under reduced motion. */
+  /** Map jump to stop `index`. Instant under reduced motion. */
   flyToStop: (index: number, now: number, reduced: boolean) => void;
-  /** Manual moves so far (not autoplay or snapping); the controls hint reads it. */
+  /** Manual moves so far (not ignored autoplay input); the controls hint reads it. */
   moves: number;
   setFinaleShown: (shown: boolean) => void;
   /** Boot panel, then the intro sweep, then the voyage. Voyage input is ignored while booting. */
@@ -46,11 +53,18 @@ export interface JourneyState {
   /** Whether all sound is muted; remembered across visits. */
   muted: boolean;
   toggleMute: () => void;
-  /** Whether autoplay is hopping from stop to stop. Any voyage input turns it off. */
+  /** Whether autoplay is cruising. Only Space, its button or a jump turns it off. */
   autoplay: boolean;
   toggleAutoplay: () => void;
-  /** Moves the target for autoplay without counting as manual input that stops it. */
-  autoplayTo: (target: number, now: number) => void;
+  /** Stops whose lap has finished this session. */
+  readStops: readonly string[];
+  markRead: (id: string) => void;
+  /** What Voyager is doing at `capturedStopId`. */
+  orbit: Orbit;
+  capturedStopId: string | null;
+  setOrbit: (orbit: Orbit, id: string | null) => void;
+  /** `performance.now()` of the last input ignored during autoplay, for the hint. */
+  ignoredHintAt: number;
 }
 
 export type Phase = 'boot' | 'intro' | 'voyage';
@@ -92,71 +106,94 @@ function writeMuted(storage: KeyValueStorage | null, muted: boolean): void {
   }
 }
 
-export interface Flight {
-  /** Target progress when the flight started. */
-  from: number;
-  /** Where it ends: 0 for Back to Earth, a stop's close point for a map jump. */
-  to: number;
-  /** Length in ms. */
-  duration: number;
-  /** `performance.now()` when it started. */
-  startAt: number;
+export type { Flight };
+
+/** The throttle direction in force at `now`: a held key wins, then recent wheel or touch input. */
+export function activeThrottle(
+  s: Pick<JourneyState, 'heldKey' | 'throttleDir' | 'lastInputAt'>,
+  now: number,
+): -1 | 0 | 1 {
+  if (s.heldKey !== 0) return s.heldKey;
+  return inputActive(now, s.lastInputAt) ? s.throttleDir : 0;
 }
 
+/** `points` are the stops' capture points, in route order. */
 export function createJourneyStore(
-  closePoints: readonly number[],
+  points: readonly number[],
   { phase = 'boot', storage = browserStorage() }: Options = {},
 ) {
-  const gaps = closePoints.slice(1).map((cp, i) => cp - (closePoints[i] ?? 0));
-  const meanGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 1;
-  const stepSize = meanGap * ARROW_STEP_FRACTION;
-
   return createStore<JourneyState>()((set, get) => {
-    /**
-     * Gate for voyage input: false while booting; ends the intro sweep at once otherwise.
-     * Manual input also stops a rewind and autoplay (the callers set those fields).
-     */
+    /** Gate for voyage input: false while booting; ends the intro sweep at once otherwise. */
     const accept = (): boolean => {
       const current = get().phase;
       if (current === 'boot') return false;
       if (current === 'intro') set({ phase: 'voyage' });
       return true;
     };
-    /** Manual input stops a flight and autoplay, and counts as a move (for the controls hint). */
-    const manual = () => ({ flight: null, autoplay: false, moves: get().moves + 1 });
+    /** Travel input during autoplay is ignored and shows the hint. */
+    const ignored = (now: number): boolean => {
+      if (!get().autoplay) return false;
+      set({ ignoredHintAt: now });
+      return true;
+    };
+    /** Starts a jump: manual input that stops autoplay and replaces any flight. */
+    const jump = (to: number, now: number, duration: number) => {
+      const from = journeyRuntime.position;
+      set({
+        flight: { from, to, startAt: now, duration },
+        autoplay: false,
+        heldKey: 0,
+        lastInputAt: -Infinity,
+        moves: get().moves + 1,
+      });
+    };
 
     return {
-      target: 0,
-      lastInputAt: 0,
+      lastInputAt: -Infinity,
+      throttleDir: 1,
+      intensity: 0,
+      heldKey: 0,
       openStopId: null,
       audioUnlocked: false,
       flight: null,
       finaleShown: false,
-      nudge: (delta, now) => {
-        if (!accept()) return;
-        set({ target: applyDelta(get().target, delta), lastInputAt: now, ...manual() });
-      },
-      step: (dir, now) => {
-        get().nudge(dir * stepSize, now);
-      },
-      goToStop: (dir, now) => {
-        if (!accept()) return;
+      throttle: (dir, intensity, now) => {
+        if (!accept() || ignored(now)) return;
         set({
-          target: neighbourTarget(get().target, closePoints, dir),
+          throttleDir: dir,
+          intensity,
           lastInputAt: now,
-          ...manual(),
+          flight: null,
+          moves: get().moves + 1,
         });
       },
-      goToStart: (now) => {
-        if (!accept()) return;
-        set({ target: 0, lastInputAt: now, ...manual() });
+      keyHold: (dir, down, now) => {
+        if (!accept() || ignored(now)) return;
+        if (down) {
+          set({
+            heldKey: dir,
+            throttleDir: dir,
+            intensity: KEY_INTENSITY,
+            flight: null,
+            moves: get().moves + 1,
+          });
+        } else if (get().heldKey === dir) {
+          set({ heldKey: 0, lastInputAt: -Infinity });
+        }
       },
-      goToEnd: (now) => {
+      goToStop: (dir, now, reduced = false) => {
         if (!accept()) return;
-        set({ target: 1, lastInputAt: now, ...manual() });
+        const from = journeyRuntime.position;
+        const to = neighbourTarget(from, points, dir);
+        jump(to, now, reduced ? 0 : flightMs(to - from));
       },
-      snapTo: (target) => {
-        set({ target: clampProgress(target) });
+      goToStart: (now, reduced = false) => {
+        if (!accept()) return;
+        jump(0, now, reduced ? 0 : flightMs(journeyRuntime.position));
+      },
+      goToEnd: (now, reduced = false) => {
+        if (!accept()) return;
+        jump(1, now, reduced ? 0 : flightMs(1 - journeyRuntime.position));
       },
       setOpenStop: (id) => {
         if (get().openStopId !== id) set({ openStopId: id });
@@ -166,34 +203,13 @@ export function createJourneyStore(
       },
       flyBack: (now, reduced) => {
         if (!accept()) return;
-        if (reduced) {
-          journeyRuntime.position = 0;
-          set({ target: 0, lastInputAt: now, ...manual() });
-          return;
-        }
-        set({
-          flight: { from: get().target, to: 0, startAt: now, duration: FLY_BACK_MS },
-          lastInputAt: now,
-          autoplay: false,
-        });
-      },
-      flyTo: (target, now) => {
-        set({ target: clampProgress(target), lastInputAt: now });
+        jump(points[0] ?? 0, now, reduced ? 0 : FLY_BACK_MS);
+        set({ readStops: [] });
       },
       flyToStop: (index, now, reduced) => {
-        const to = closePoints[index];
+        const to = points[index];
         if (to === undefined || !accept()) return;
-        if (reduced) {
-          journeyRuntime.position = to;
-          set({ target: to, lastInputAt: now, ...manual() });
-          return;
-        }
-        const from = get().target;
-        set({
-          ...manual(),
-          flight: { from, to, startAt: now, duration: flightMs(to - from) },
-          lastInputAt: now,
-        });
+        jump(to, now, reduced ? 0 : flightMs(to - journeyRuntime.position));
       },
       moves: 0,
       endFlight: () => {
@@ -225,11 +241,20 @@ export function createJourneyStore(
       autoplay: false,
       toggleAutoplay: () => {
         if (get().phase !== 'voyage' && !get().autoplay) return;
-        set({ autoplay: !get().autoplay });
+        set({ autoplay: !get().autoplay, heldKey: 0, lastInputAt: -Infinity });
       },
-      autoplayTo: (target, now) => {
-        set({ target: clampProgress(target), lastInputAt: now, flight: null });
+      readStops: [],
+      markRead: (id) => {
+        const read = get().readStops;
+        if (!read.includes(id)) set({ readStops: [...read, id] });
       },
+      orbit: 'none',
+      capturedStopId: null,
+      setOrbit: (orbit, id) => {
+        const s = get();
+        if (s.orbit !== orbit || s.capturedStopId !== id) set({ orbit, capturedStopId: id });
+      },
+      ignoredHintAt: 0,
     };
   });
 }
@@ -238,7 +263,10 @@ export type JourneyStore = ReturnType<typeof createJourneyStore>;
 
 export const ROUTE = buildRoute(STOPS);
 
-export const journeyStore = createJourneyStore(ROUTE.closePoints);
+/** The voyage step's per-stop constants (capture points, lap lengths, speeds). */
+export const VOYAGE = createVoyageContext(ROUTE, STOPS);
+
+export const journeyStore = createJourneyStore(VOYAGE.capture);
 
 export const useJourney = <T>(selector: (state: JourneyState) => T): T =>
   useStore(journeyStore, selector);
@@ -249,4 +277,14 @@ export const journeyRuntime = {
   position: 0,
   /** How fast `position` is moving, in progress per second (0 at rest). */
   speed: 0,
+  /** Voyager's world position: on the route, or on a lap. */
+  ship: [0, 0, 0] as Vec3,
+  /** Voyager's unit direction of travel. */
+  heading: [0, 0, -1] as Vec3,
+  /** Index of the stop Voyager is captured at (lap, drift or hold), or -1. */
+  captured: -1,
+  /** Orbit clock (ms) of the current capture; drives the typewriter. */
+  orbitClock: 0,
+  /** 0 in the chase view, 1 in the orbit view; eased between. */
+  captureWeight: 0,
 };

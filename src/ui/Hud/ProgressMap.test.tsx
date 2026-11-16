@@ -53,7 +53,6 @@ describe('ProgressMap', () => {
     expect(screen.getByRole('button', { name: title('moon') })).toHaveFocus();
     fireEvent.keyDown(document.activeElement ?? earth, { key: 'ArrowLeft' });
     expect(earth).toHaveFocus();
-    expect(store.getState().target).toBe(0);
     expect(store.getState().flight).toBeNull();
   });
 });

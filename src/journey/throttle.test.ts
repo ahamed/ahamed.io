@@ -3,6 +3,7 @@ import {
   boostFor,
   cruiseSpeed,
   dampBoost,
+  eventRate,
   inputActive,
   KEY_INTENSITY,
   MAX_BOOST,
@@ -66,5 +67,14 @@ describe('boost', () => {
     expect(wheelIntensity(3000)).toBeCloseTo(1);
     expect(wheelIntensity(600)).toBeCloseTo(0.2);
     expect(KEY_INTENSITY).toBe(0.5);
+  });
+});
+
+describe('eventRate', () => {
+  it('reads pixels per second between events, treating a first or late event as 250 ms', () => {
+    expect(eventRate(100, 100)).toBeCloseTo(1000);
+    expect(eventRate(-100, 100)).toBeCloseTo(1000);
+    expect(eventRate(100, 2)).toBeCloseTo(100 / 0.016);
+    expect(eventRate(100, Infinity)).toBeCloseTo(400);
   });
 });

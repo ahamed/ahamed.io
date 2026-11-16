@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  dockRectInto,
+  dockWidth,
   easeOffset,
   placeDialog,
   type Circle,
@@ -175,5 +177,29 @@ describe('easeOffset', () => {
 
   it('jumps straight to the target under reduced motion', () => {
     expect(easeOffset(0, 100, 1 / 60, true)).toBe(100);
+  });
+});
+
+describe('dockRectInto', () => {
+  const out = { x: 0, y: 0 };
+
+  it('docks the dialog at the left margin, vertically centred', () => {
+    dockRectInto(out, { w: 1440, h: 900 }, { w: 416, h: 300 }, 16);
+    expect(out.x).toBe(16);
+    expect(out.y).toBe(300);
+  });
+
+  it('keeps a tall dialog inside the margins', () => {
+    dockRectInto(out, { w: 1440, h: 500 }, { w: 416, h: 600 }, 16);
+    expect(out.y).toBe(16);
+  });
+
+  it('leaves a body centred in the remaining space uncovered', () => {
+    const viewport = { w: 1440, h: 900 };
+    const dialog = { w: 416, h: 300 };
+    dockRectInto(out, viewport, dialog, 16);
+    const dock = dockWidth(dialog.w, 16);
+    const body = { x: dock + (viewport.w - dock) / 2, y: 450, r: 250 };
+    expect(out.x + dialog.w).toBeLessThan(body.x - body.r);
   });
 });

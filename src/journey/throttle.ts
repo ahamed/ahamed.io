@@ -43,3 +43,10 @@ export const dampBoost = (current: number, target: number, dt: number): number =
 /** Intensity of wheel input scrolling at `pxPerSec`. */
 export const wheelIntensity = (pxPerSec: number): number =>
   Math.max(0, pxPerSec) / FULL_WHEEL_PX_PER_S;
+
+/** Longest gap (ms) between events still read as one gesture; also used for a first event. */
+const MAX_EVENT_GAP_MS = 250;
+
+/** Speed (px/s) of an input that moved `px` since the previous event `dtMs` ago. */
+export const eventRate = (px: number, dtMs: number): number =>
+  (Math.abs(px) * 1000) / Math.min(MAX_EVENT_GAP_MS, Math.max(16, dtMs));
