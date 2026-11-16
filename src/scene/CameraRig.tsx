@@ -175,11 +175,13 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
     if (openIndex !== currentIndex) {
       scratch.spot = null;
       scratch.writtenRect.fill(NaN);
+      scratch.writtenBody.fill(NaN);
       scratch.last.fill(NaN);
     }
     const dialogOrbit = atStop === openBody.id ? orbit : 'none';
     if (element.dataset.orbit !== dialogOrbit) element.dataset.orbit = dialogOrbit;
-    const read = state.readStops.includes(openBody.id) ? 'true' : 'false';
+    // Fresh state: this frame may have just marked the stop read.
+    const read = store.getState().readStops.includes(openBody.id) ? 'true' : 'false';
     if (element.dataset.read !== read) element.dataset.read = read;
 
     // The body's disc and Voyager's box on screen, in CSS px.
@@ -240,6 +242,7 @@ export function CameraRig({ route, store, voyager, sky, voyage }: Props) {
     writeVar(element, '--scale', scale, '', scratch.last, 2);
     writeVar(element, '--opacity', opacity + (1 - opacity) * dockShare, '', scratch.last, 3);
     writeRect(element, scratch.voyagerRect, scratch);
+    writeBody(element, disc, scratch);
   });
 
   return null;
@@ -358,6 +361,7 @@ interface Scratch {
   input: PlacementInput;
   placed: Placement;
   writtenRect: number[];
+  writtenBody: number[];
 }
 
 function createScratch(route: Route, voyage?: VoyageState): Scratch {
@@ -409,6 +413,7 @@ function createScratch(route: Route, voyage?: VoyageState): Scratch {
     },
     placed: { spot: 'right', x: 0, y: 0 },
     writtenRect: [NaN, NaN, NaN, NaN],
+    writtenBody: [NaN, NaN, NaN],
   };
 }
 
@@ -464,6 +469,19 @@ function voyagerRectInto(
   rect.y = minY;
   rect.w = maxX - minX;
   rect.h = maxY - minY;
+}
+
+/** Publishes the body's screen disc on the dialog as "x,y,r" (for E2E), only on change. */
+function writeBody(element: HTMLElement, disc: Scratch['disc'], scratch: Scratch): void {
+  const last = scratch.writtenBody;
+  const x = Math.round(disc.x);
+  const y = Math.round(disc.y);
+  const r = Math.round(disc.r);
+  if (x === last[0] && y === last[1] && r === last[2]) return;
+  last[0] = x;
+  last[1] = y;
+  last[2] = r;
+  element.dataset.bodyRect = `${String(x)},${String(y)},${String(r)}`;
 }
 
 /** Publishes Voyager's screen rect on the dialog (for tests and dev tools), only on change. */

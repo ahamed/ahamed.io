@@ -184,7 +184,8 @@ export function createJourneyStore(
       goToStop: (dir, now, reduced = false) => {
         if (!accept()) return;
         const from = journeyRuntime.position;
-        const to = neighbourTarget(from, points, dir);
+        // Repeated presses step on from where the running jump is heading.
+        const to = neighbourTarget(get().flight?.to ?? from, points, dir);
         jump(to, now, reduced ? 0 : flightMs(to - from));
       },
       goToStart: (now, reduced = false) => {

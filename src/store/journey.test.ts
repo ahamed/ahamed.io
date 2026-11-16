@@ -71,6 +71,15 @@ describe('journey store', () => {
       expect(store.getState().flight?.to).toBe(0.001);
     });
 
+    it('count the next stop from a running flight’s destination', () => {
+      const three = createJourneyStore([0.001, 0.3, 0.8], { phase: 'voyage', storage: null });
+      three.getState().goToStop(1, 0);
+      journeyRuntime.position = 0.1; // still on the way to 0.3
+      three.getState().goToStop(1, 10);
+      expect(three.getState().flight?.to).toBe(0.8);
+      expect(three.getState().flight?.from).toBe(0.1);
+    });
+
     it('fly to the start and the end', () => {
       const store = make();
       store.getState().goToEnd(0);

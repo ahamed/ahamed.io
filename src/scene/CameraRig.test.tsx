@@ -437,6 +437,34 @@ describe('CameraRig map flight', () => {
   });
 });
 
+describe('CameraRig read marker', () => {
+  it.each([0, 3, 18])(
+    'marks stop %i read on its dialog in the frame its lap ends',
+    async (index) => {
+      const id = STOPS[index]?.id ?? '';
+      const element = document.createElement('section');
+      element.dataset.read = 'false';
+      dialogElements.set(id, element);
+      const store = createJourneyStore(points, { phase: 'voyage', storage: null });
+      const voyage = createVoyageState(ctx);
+      voyage.stop = index;
+      voyage.position = points[index] ?? 0;
+      voyage.clock = (ctx.lapS[index] ?? 0) * 1000 - 1;
+      const renderer = await ReactThreeTestRenderer.create(
+        <CameraRig route={route} store={store} voyager={{ current: null }} voyage={voyage} />,
+      );
+      await ReactThreeTestRenderer.act(async () => {
+        await renderer.advanceFrames(1, 1 / 30);
+      });
+      // The same frame the lap ends: the dialog may close on the next one.
+      expect(store.getState().readStops).toContain(id);
+      expect(element.dataset.read).toBe('true');
+      await renderer.unmount();
+      dialogElements.delete(id);
+    },
+  );
+});
+
 describe('CameraRig orbit capture', () => {
   const DIALOG = { w: 416, h: 260 };
   const MOON = 1;
@@ -496,6 +524,10 @@ describe('CameraRig orbit capture', () => {
     const centre = new Vector3(...body.position).project(camera);
     const cx = ((centre.x + 1) / 2) * three.width;
     const dock = DIALOG.w + 32;
+    // The body's screen disc is published for E2E as "x,y,r".
+    const [bx = 0, , br = 0] = (element.dataset.bodyRect ?? '').split(',').map(Number);
+    expect(Math.abs(bx - cx)).toBeLessThan(2);
+    expect(br).toBeGreaterThan(0);
     expect(Math.abs(cx - (dock + (three.width - dock) / 2))).toBeLessThan(three.width * 0.05);
     // The dialog sits at the left margin at full scale.
     expect(Number.parseFloat(element.style.getPropertyValue('--x'))).toBeCloseTo(16, -1);

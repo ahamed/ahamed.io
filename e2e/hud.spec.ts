@@ -31,6 +31,16 @@ test.describe('HUD', () => {
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'closed');
   });
 
+  test('a map click from inside an orbit leaves it and is captured at the new stop', async ({
+    page,
+  }) => {
+    await start(page);
+    await expect(dialog(page, 'earth')).toHaveAttribute('data-orbit', 'lap');
+    await dot(page, 'Open-source libraries').click();
+    await expect(dialog(page, 'saturn')).toHaveAttribute('data-orbit', 'lap', OPEN);
+    await expect(dialog(page, 'earth')).toHaveAttribute('data-read', 'false');
+  });
+
   test('left and right arrows move along the dots without moving the voyage', async ({ page }) => {
     await start(page);
     await dot(page, /^Hello/).focus();

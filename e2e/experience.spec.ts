@@ -62,13 +62,23 @@ test.describe('sound and autoplay', () => {
     );
   });
 
-  test('Space autoplays to the Moon, and an arrow key pauses it', async ({ page }) => {
-    test.setTimeout(90_000);
+  test('Space autoplays: Earth lap, cruise, Moon orbit; scroll is ignored; Space stops it', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
     const autoplay = page.getByRole('button', { name: 'Autoplay' });
     await page.keyboard.press('Space');
     await expect(autoplay).toHaveAttribute('aria-pressed', 'true');
-    await expect(dialog(page, 'moon')).toHaveAttribute('data-state', 'open', { timeout: 60_000 });
+    await expect(dialog(page, 'moon')).toHaveAttribute('data-orbit', 'lap', { timeout: 90_000 });
+    // Scrolling and arrows are ignored, with a hint.
+    await page.mouse.move(700, 400);
+    await page.mouse.wheel(0, 300);
     await page.keyboard.press('ArrowDown');
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Autoplay on · Space to stop' }),
+    ).toBeVisible();
+    await expect(autoplay).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Space');
     await expect(autoplay).toHaveAttribute('aria-pressed', 'false');
   });
 });

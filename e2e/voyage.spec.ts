@@ -99,28 +99,21 @@ test.describe('voyage', () => {
     await expect(dialog(page, 'moon')).toHaveAttribute('data-state', 'closed');
   });
 
-  test('arrow steps move forward and close Earth without skipping to the Moon', async ({
-    page,
-  }) => {
-    // 13 steps (each 4% of the mean gap) reach p ≈ 0.052: past where Earth closes (≈ 0.049) and
-    // short of the Moon's snap reach (≈ 0.054). Send them as one quick burst, as held or fast
-    // keys arrive. One by one, a slow software-rendered frame between presses lets the idle snap
-    // pull the target back to Earth.
-    await page.evaluate(() => {
-      for (let i = 0; i < 13; i++) {
-        document.body.dispatchEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
-        );
-      }
-    });
-    await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'closed', OPEN_TIMEOUT);
-    await expect(dialog(page, 'moon')).toHaveAttribute('data-state', 'closed');
+  test('a held ↓ speeds up the Earth lap, then flies on and closes Earth', async ({ page }) => {
+    test.setTimeout(60_000);
+    const earth = dialog(page, 'earth');
+    await expect(earth).toHaveAttribute('data-orbit', 'lap');
+    await page.keyboard.down('ArrowDown');
+    await expect(earth).toHaveAttribute('data-read', 'true', { timeout: 30_000 });
+    await expect(earth).toHaveAttribute('data-state', 'closed', OPEN_TIMEOUT);
+    await page.keyboard.up('ArrowDown');
   });
 
-  test('wheel moves the voyage while the page itself never scrolls', async ({ page }) => {
+  test('the wheel drives the voyage while the page itself never scrolls', async ({ page }) => {
     await page.mouse.move(400, 300);
     for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 200);
-    await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'closed', OPEN_TIMEOUT);
+    // During the Earth lap, scrolling forward only speeds the lap: Voyager stays in orbit.
+    await expect(dialog(page, 'earth')).toHaveAttribute('data-orbit', 'lap');
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 

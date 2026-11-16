@@ -118,18 +118,18 @@ Each task is TDD: write a failing test, run it and watch it fail, make it pass w
 
 ## 7. E2E, reduced motion and phones
 
-- [ ] 7.1 Update `e2e/voyage.spec.ts` and `experience.spec.ts` for the throttle and the removed snap:
+- [x] 7.1 Update `e2e/voyage.spec.ts` and `experience.spec.ts` for the throttle and the removed snap:
   - The arrow and wheel tests assert movement and rest.
   - The PageDown tour still visits every stop, because a jump releases the capture.
-- [ ] 7.2 Add `e2e/orbit.spec.ts`:
+- [x] 7.2 Add `e2e/orbit.spec.ts`:
   - At boot, Earth is `data-orbit="lap"`.
   - The lap ends → coast → Earth `data-read`.
   - Scrolling backward mid-lap leaves the orbit.
   - The body is centred within 5% of the viewing area, and the dialog is docked left at 1440 × 900.
   - At 375px the body is above the bottom sheet.
   - The heliopause is `drift`.
-- [ ] 7.3 Update `e2e/hud.spec.ts` (map jump from inside an orbit, the autoplay ignored-scroll hint) and the autoplay E2E (it cruises Earth → Moon, with no hop).
-- [ ] 7.4 Update `e2e/reduced-motion.spec.ts`: the hold with no lap, the full text at once, and a forward scroll releasing.
+- [x] 7.3 Update `e2e/hud.spec.ts` (map jump from inside an orbit, the autoplay ignored-scroll hint) and the autoplay E2E (it cruises Earth → Moon, with no hop).
+- [x] 7.4 Update `e2e/reduced-motion.spec.ts`: the hold with no lap, the full text at once, and a forward scroll releasing.
 - [ ] 7.5 Run `pnpm e2e`, including `perf.spec.ts`, and check the budgets are unchanged at the Saturn orbit view.
 
 ## 8. Gate and verification

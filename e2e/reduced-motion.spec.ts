@@ -36,6 +36,16 @@ test.describe('reduced motion', () => {
     await expect(earth.locator('[data-typewriter]')).toHaveText(full ?? '', { timeout: 100 });
   });
 
+  test('a stop holds with no lap, then a forward scroll releases it', async ({ page }) => {
+    await start(page);
+    const earth = dialog(page, 'earth');
+    await expect(earth).toHaveAttribute('data-orbit', 'hold', OPEN);
+    await page.mouse.move(700, 400);
+    await page.mouse.wheel(0, 200);
+    await expect(earth).toHaveAttribute('data-read', 'true', OPEN);
+    await expect(earth).not.toHaveAttribute('data-orbit', 'hold');
+  });
+
   test('map jumps and Back to Earth arrive at once', async ({ page }) => {
     await start(page);
     await expect(dialog(page, 'earth')).toHaveAttribute('data-state', 'open', OPEN);
