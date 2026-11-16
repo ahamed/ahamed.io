@@ -406,3 +406,59 @@ describe('allocation', () => {
     expect(r.s.heading).toBe(heading);
   });
 });
+
+describe('the lap target', () => {
+  const SATURN = ctx.ids.indexOf('saturn');
+  const VESTA = ctx.ids.indexOf('vesta');
+
+  it('is the captured stop during a lap', () => {
+    const r = setup();
+    run(r, DT);
+    expect(r.s.target).toBe(0);
+  });
+
+  it('is the next unread stop while travelling, with the leg from the stop before it', () => {
+    const r = setup((s, input) => {
+      beforeMoon(s);
+      readEarth(input);
+      s.position -= 0.005;
+    });
+    run(r, DT);
+    expect(r.s.target).toBe(MOON);
+    expect(r.s.legFrom).toBe(ctx.capture[0]);
+  });
+
+  it('skips read stops', () => {
+    const r = setup((s, input) => {
+      s.mode = 'free';
+      s.stop = -1;
+      s.position = ctx.capture[2] ?? 0;
+      input.readStops = ctx.ids.slice(0, VESTA);
+    });
+    run(r, DT);
+    expect(r.s.target).toBe(VESTA);
+    expect(r.s.legFrom).toBe(ctx.capture[VESTA - 1]);
+  });
+
+  it('is the flight destination during a jump, with the leg from the jump start', () => {
+    const r = setup((_, input) => {
+      readEarth(input);
+    });
+    const from = r.s.position;
+    r.input.flight = { from, to: ctx.capture[SATURN] ?? 0, startAt: 0, duration: 3000 };
+    run(r, 0.5);
+    expect(r.s.target).toBe(SATURN);
+    expect(r.s.legFrom).toBe(from);
+  });
+
+  it('is -1 past the heliopause', () => {
+    const r = setup((s, input) => {
+      s.mode = 'free';
+      s.stop = -1;
+      s.position = (ctx.capture[HELIO] ?? 0) + 0.01;
+      input.readStops = [...ctx.ids];
+    });
+    run(r, DT);
+    expect(r.s.target).toBe(-1);
+  });
+});

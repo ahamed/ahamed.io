@@ -28,6 +28,41 @@ export function aimTowardInto(out: Vec3, aim: Vec3, body: Vec3, weight: number):
   return out;
 }
 
+/** Rate (1/s) at which the chase camera turns toward a new lap target. */
+export const AIM_RATE = 3;
+
+/**
+ * Turns the unit look direction `dir` toward `target` as seen from `from`, damped at AIM_RATE
+ * (immediate when `reduced`), so a change of lap target eases rather than snaps.
+ */
+export function aimDirInto(
+  dir: Vec3,
+  from: Vec3,
+  target: Vec3,
+  dt: number,
+  reduced: boolean,
+): Vec3 {
+  const tx = target[0] - from[0];
+  const ty = target[1] - from[1];
+  const tz = target[2] - from[2];
+  const tl = Math.hypot(tx, ty, tz) || 1;
+  const k = reduced ? 1 : 1 - Math.exp(-AIM_RATE * Math.min(Math.max(dt, 0), 0.1));
+  const x = dir[0] + (tx / tl - dir[0]) * k;
+  const y = dir[1] + (ty / tl - dir[1]) * k;
+  const z = dir[2] + (tz / tl - dir[2]) * k;
+  const l = Math.hypot(x, y, z);
+  if (l < 1e-9) {
+    dir[0] = tx / tl;
+    dir[1] = ty / tl;
+    dir[2] = tz / tl;
+  } else {
+    dir[0] = x / l;
+    dir[1] = y / l;
+    dir[2] = z / l;
+  }
+  return dir;
+}
+
 const LANDSCAPE_AIM = 0.25;
 const PORTRAIT_AIM = 0.75;
 /** Apparent size at which the aim reaches full strength. */
@@ -41,6 +76,21 @@ export function aimWeight(bodySize: number, aspect: number): number {
   const nearness = Math.min(1, Math.max(0, bodySize / FULL_AIM_SIZE));
   const strength = aspect < 1 ? PORTRAIT_AIM : LANDSCAPE_AIM;
   return nearness * strength;
+}
+
+/** Share of the leg to the lap target over which the camera frames into the orbit view. */
+export const APPROACH_SHARE = 0.3;
+
+/**
+ * How far the camera has framed into the lap target's orbit view at progress `p`, on the leg
+ * from `legFrom` to the target's capture point `cp`: 0 before the last APPROACH_SHARE of the
+ * leg, smoothstep up to 1 at `cp`. A pure function of position, so travelling back reverses it.
+ */
+export function approachWeight(p: number, legFrom: number, cp: number): number {
+  const span = APPROACH_SHARE * (cp - legFrom);
+  if (span <= 0) return 1;
+  const x = Math.min(1, Math.max(0, (p - (cp - span)) / span));
+  return x * x * (3 - 2 * x);
 }
 
 /** Camera elevation above the lap's plane in the orbit view. */

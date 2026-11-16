@@ -5,9 +5,9 @@
 
 ## 2. Lap target and approach weight (pure)
 
-- [ ] 2.1 Red → green: `target` and `legFrom` on the voyage state (captured / flight destination / next unread / -1) (D2)
-- [ ] 2.2 Red → green: `approachWeight` in `camera.ts`, which is 0 before the last 30% of the leg, smoothstep, 1 at the capture point, and reverses when going back (D3)
-- [ ] 2.3 Red → green: chase aim at a damped aim point, with Voyager kept clear of the target on screen (D5)
+- [x] 2.1 Red → green: `target` and `legFrom` on the voyage state (captured / flight destination / next unread / -1) (D2)
+- [x] 2.2 Red → green: `approachWeight` in `camera.ts`, which is 0 before the last 30% of the leg, smoothstep, 1 at the capture point, and reverses when going back (D3)
+- [x] 2.3 Red → green: chase aim along a damped look direction, with Voyager kept clear of the target on screen (D5)
 
 ## 3. Camera rig
 

@@ -3,6 +3,9 @@ import { STOPS } from '../content/journey';
 import {
   aimTowardInto,
   aimWeight,
+  APPROACH_SHARE,
+  approachWeight,
+  aimDirInto,
   chasePoseInto,
   type ChasePose,
   orbitPoseInto,
@@ -154,5 +157,84 @@ describe('viewAreaInto', () => {
     expect(area.offsetX).toBeCloseTo(-120);
     viewAreaInto(area, { w: 1440, h: 900 }, { dock: 480, sheet: 0 }, fovY, 0);
     expect(area.offsetX).toBe(0);
+  });
+});
+
+describe('approachWeight', () => {
+  const from = 0.1;
+  const cp = 0.2;
+  const start = cp - APPROACH_SHARE * (cp - from);
+
+  it('frames in over the last 30% of the leg', () => {
+    expect(APPROACH_SHARE).toBe(0.3);
+    expect(approachWeight(from, from, cp)).toBe(0);
+    expect(approachWeight(start, from, cp)).toBe(0);
+    expect(approachWeight(cp, from, cp)).toBe(1);
+    expect(approachWeight(cp + 0.01, from, cp)).toBe(1);
+  });
+
+  it('eases in and out (smoothstep) and is symmetric about the middle', () => {
+    const mid = (start + cp) / 2;
+    expect(approachWeight(mid, from, cp)).toBeCloseTo(0.5, 6);
+    const near = start + (cp - start) * 0.05;
+    expect(approachWeight(near, from, cp)).toBeLessThan(0.05 * 0.5);
+  });
+
+  it('is monotonic, so going back reverses it', () => {
+    let prev = -1;
+    for (let k = 0; k <= 100; k++) {
+      const w = approachWeight(from + ((cp - from) * k) / 100, from, cp);
+      expect(w).toBeGreaterThanOrEqual(prev);
+      prev = w;
+    }
+  });
+
+  it('is 1 on a zero-length leg', () => {
+    expect(approachWeight(cp, cp, cp)).toBe(1);
+  });
+});
+
+describe('aimDirInto', () => {
+  const len = (v: Vec3) => Math.hypot(v[0], v[1], v[2]);
+
+  it('settles on the unit direction from the camera to the target', () => {
+    const dir: Vec3 = [0, 0, -1];
+    for (let i = 0; i < 240; i++) aimDirInto(dir, [0, 2, 0], [30, 2, -40], 1 / 60, false);
+    expect(dir[0]).toBeCloseTo(0.6, 3);
+    expect(dir[2]).toBeCloseTo(-0.8, 3);
+    expect(len(dir)).toBeCloseTo(1, 6);
+  });
+
+  it('turns without a jump when the target changes', () => {
+    const dir: Vec3 = [0, 0, -1];
+    let prev: Vec3 = [...dir];
+    for (let i = 0; i < 120; i++) {
+      aimDirInto(dir, [0, 0, 0], [100, 0, -10], 1 / 60, false);
+      const step = Math.acos(Math.min(1, dir[0] * prev[0] + dir[1] * prev[1] + dir[2] * prev[2]));
+      expect(step).toBeLessThan(0.08);
+      prev = [...dir];
+    }
+  });
+
+  it('snaps under reduced motion', () => {
+    const dir: Vec3 = [0, 0, -1];
+    aimDirInto(dir, [0, 0, 0], [0, 0, 5], 1 / 60, true);
+    expect(dir).toEqual([0, 0, 1]);
+  });
+
+  it('keeps Voyager below the target in the chase view', () => {
+    const route = buildRoute(STOPS);
+    const pose: ChasePose = { position: [0, 0, 0], lookAt: [0, 0, 0] };
+    const p = 0.1;
+    chasePoseInto(pose, route, p);
+    const body = route.bodies[STOPS.findIndex((s) => s.body === 'vesta')]?.position ?? [0, 0, 0];
+    const dir: Vec3 = [0, 0, -1];
+    aimDirInto(dir, pose.position, body, 1 / 60, true);
+    const shipAt: Vec3 = [0, 0, 0];
+    pointAt(route, p, shipAt);
+    const toShip = shipAt.map((v, i) => v - (pose.position[i] ?? 0)) as Vec3;
+    const n = len(toShip);
+    const cos = (toShip[0] * dir[0] + toShip[1] * dir[1] + toShip[2] * dir[2]) / n;
+    expect(Math.acos(cos)).toBeGreaterThan((10 * Math.PI) / 180);
   });
 });

@@ -108,6 +108,10 @@ export interface VoyageState {
   events: number;
   /** The stop an EV_READ or EV_CAPTURED refers to. */
   eventStop: number;
+  /** The lap target: the stop Voyager orbits next (captured, jump destination, next unread), or -1. */
+  target: number;
+  /** Progress the leg to `target` starts from: the jump's start, else the stop before it. */
+  legFrom: number;
 }
 
 export function createVoyageContext(route: Route, stops: readonly Stop[]): VoyageContext {
@@ -165,6 +169,8 @@ export function createVoyageState(ctx: VoyageContext): VoyageState {
     lapPose: { position: [0, 0, 0], heading: [0, 0, -1] },
     events: 0,
     eventStop: -1,
+    target: 0,
+    legFrom: 0,
   };
   s.lapPose.position = s.ship;
   s.lapPose.heading = s.heading;
@@ -409,7 +415,43 @@ export function stepVoyageInto(
   now: number,
 ): VoyageState {
   s.events = 0;
-  if (input.phase !== 'voyage') return s;
+  if (input.phase === 'voyage') stepMode(s, input, ctx, dt, now);
+  updateTarget(s, ctx, input);
+  return s;
+}
+
+/** Finds the stop whose capture point is exactly `p`, or -1. */
+function stopAt(ctx: VoyageContext, p: number): number {
+  for (let i = 0; i < ctx.capture.length; i++) {
+    if (Math.abs((ctx.capture[i] ?? -1) - p) < MATCH_EPSILON) return i;
+  }
+  return -1;
+}
+
+function updateTarget(s: VoyageState, ctx: VoyageContext, input: VoyageInput): void {
+  if (s.mode === 'captured' || s.mode === 'hold') {
+    s.target = s.stop;
+    s.legFrom = s.stop > 0 ? (ctx.capture[s.stop - 1] ?? 0) : 0;
+    return;
+  }
+  const flight = s.mode === 'flight' ? s.flightRef : null;
+  const destination = flight ? stopAt(ctx, flight.to) : -1;
+  if (flight && destination >= 0 && !isRead(ctx, input, destination)) {
+    s.target = destination;
+    s.legFrom = flight.from;
+    return;
+  }
+  s.target = nextUnread(ctx, input, s.position);
+  s.legFrom = s.target > 0 ? (ctx.capture[s.target - 1] ?? 0) : 0;
+}
+
+function stepMode(
+  s: VoyageState,
+  input: VoyageInput,
+  ctx: VoyageContext,
+  dt: number,
+  now: number,
+): void {
   const flight = input.flight;
   if (flight && flight !== s.flightRef) startFlight(s, ctx, flight);
   if (!flight) s.flightRef = null;
@@ -431,5 +473,4 @@ export function stepVoyageInto(
       stepFree(s, ctx, input, dt);
       break;
   }
-  return s;
 }
