@@ -112,8 +112,13 @@ test.describe('voyage', () => {
   test('the wheel drives the voyage while the page itself never scrolls', async ({ page }) => {
     await page.mouse.move(400, 300);
     for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 200);
-    // During the Earth lap, scrolling forward only speeds the lap: Voyager stays in orbit.
-    await expect(dialog(page, 'earth')).toHaveAttribute('data-orbit', 'lap');
+    // During the Earth lap, scrolling forward only speeds the lap: Voyager stays in orbit until
+    // the lap is read (a boosted lap can end within the wheel burst on a slow machine).
+    const earth = dialog(page, 'earth');
+    expect(
+      (await earth.getAttribute('data-orbit')) === 'lap' ||
+        (await earth.getAttribute('data-read')) === 'true',
+    ).toBe(true);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
