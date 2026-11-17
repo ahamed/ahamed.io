@@ -32,7 +32,7 @@ Wheel, ↑/↓ and touch input SHALL act as a throttle. While any of them is act
 - **Wheel or trackpad:** down moves forward, up moves back.
 - **↓ / ↑:** pressing or holding moves forward or back.
 - **PageDown / PageUp:** jump to the next or previous stop's capture point.
-- **Home / End:** jump to the start or the end.
+- **Home / End:** jump to the start (Earth's capture point, where the voyage begins) or the end.
 - **Touch:** swiping up moves forward, swiping down moves back.
 
 During an orbit, forward travel input SHALL speed up the orbit clock instead of moving along the route, and backward input SHALL leave the orbit. A jump SHALL release any orbit at once. Keys SHALL be ignored while focus is in a text input. While autoplay is on, wheel, ↑/↓ and touch SHALL be ignored.
@@ -55,7 +55,7 @@ During an orbit, forward travel input SHALL speed up the orbit clock instead of 
 #### Scenario: End and Home
 
 - **WHEN** the visitor presses End, then Home
-- **THEN** the position becomes 1, then 0
+- **THEN** the position becomes 1, then Earth's capture point, and an unread Earth captures Voyager again
 
 #### Scenario: Touch swipe
 

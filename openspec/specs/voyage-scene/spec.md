@@ -8,7 +8,7 @@ Defines what the 3D voyage view shows: the Voyager 1 spacecraft seen from a chas
 
 ### Requirement: Chase view of Voyager
 
-The view SHALL show a Voyager 1 model from behind and above, with the camera following it along the route. The chase framing SHALL stay as it is in M1. Voyager SHALL be oriented so the chase camera sees a three-quarter back view: the bus and the Golden Record face toward the camera, the high-gain dish sits behind the bus with its rim visible to one side, and the magnetometer boom, the RTG boom and the science boom all stand clear of the bus in silhouette. While cruising, the dish SHALL face along the direction of travel, away from the chase camera. During an orbit, Voyager SHALL turn so the dish faces the orbited body. In the finale it SHALL turn until the dish faces Earth. Every change of attitude SHALL ease, with no jump, and SHALL show attitude-thruster puffs. The model SHALL be a detailed procedural reconstruction with at least 100 parts, and it SHALL include all of these recognisable parts:
+The view SHALL show a Voyager 1 model from behind and above, with the camera following it along the route. The chase camera's position relative to Voyager SHALL stay as it is in M1. Its look direction SHALL turn toward the lap target that orbit-capture defines, so the body Voyager will orbit next is centred, rather than only partly toward the nearest body. With no lap target, the look direction SHALL turn partly toward the nearest body, as before. Voyager SHALL be oriented so the chase camera sees a three-quarter back view: the bus and the Golden Record face toward the camera, the high-gain dish sits behind the bus with its rim visible to one side, and the magnetometer boom, the RTG boom and the science boom all stand clear of the bus in silhouette. While cruising, the dish SHALL face along the direction of travel, away from the chase camera. During an orbit, Voyager SHALL turn so the dish faces the orbited body. In the finale it SHALL turn until the dish faces Earth. Every change of attitude SHALL ease, with no jump, and SHALL show attitude-thruster puffs. The model SHALL be a detailed procedural reconstruction with at least 100 parts, and it SHALL include all of these recognisable parts:
 
 - the high-gain dish antenna, with its rim, subreflector, feed and three feed struts
 - the ten-sided bus, with ten foil-blanketed bays
@@ -55,6 +55,11 @@ Voyager SHALL be drawn about a third larger than in M1, so it reads clearly in t
 
 - **WHEN** Voyager is released from an orbit
 - **THEN** its dish turns back to the direction of travel over about a second or more, with no jump
+
+#### Scenario: Chase view aims at the lap target
+
+- **WHEN** Voyager cruises from Ceres's release toward the unread Vesta
+- **THEN** the camera sits at its usual offset behind and above Voyager and looks at Vesta, with Voyager below the centre of the view
 
 ### Requirement: Earth and Moon along the route
 
