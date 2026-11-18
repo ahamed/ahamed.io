@@ -54,16 +54,25 @@ describe('ControlsHint', () => {
     pointer(true);
     const { store, wait } = setup();
     act(() => {
-      store.getState().step(1, Date.now());
-      store.getState().step(1, Date.now());
+      store.getState().keyHold(1, true, Date.now());
+      store.getState().keyHold(1, false, Date.now());
+      store.getState().keyHold(1, true, Date.now());
     });
     wait(600);
     expect(hint()).not.toHaveAttribute('data-visible');
     expect(hint()).toHaveAttribute('aria-hidden', 'true');
   });
 
+  it('reads the new wording: travel, read faster in an orbit, autoplay, sound', () => {
+    expect(KEYS_HINT).toBe(
+      'Scroll or ↑↓ to fly · Scroll during an orbit to read faster · Space autoplay · M sound',
+    );
+  });
+
   it('fades after 8 seconds, and comes back after 20 s idle at Earth', () => {
     pointer(true);
+    // Voyager rests at Earth's capture point, just past the start of the route.
+    journeyRuntime.position = 0.00115;
     const { wait } = setup();
     wait(8600);
     expect(hint()).not.toHaveAttribute('data-visible');

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FINALE } from '../../content/journey';
 import type { Finale } from '../../content/schema';
-import { createJourneyStore } from '../../store/journey';
+import { createJourneyStore, journeyRuntime } from '../../store/journey';
 import { stubReducedMotion } from '../../test/reducedMotion';
 import { FinaleLayer } from './FinaleLayer';
 import { finaleLayer } from './registry';
@@ -73,10 +73,11 @@ describe('FinaleLayer', () => {
   it('Back to Earth starts the rewind', () => {
     stubReducedMotion(false);
     const { store, show } = renderLayer();
-    store.getState().goToEnd(0);
+    journeyRuntime.position = 1;
     show(true);
     fireEvent.click(screen.getByRole('button', { name: 'Back to Earth' }));
     expect(store.getState().flight?.from).toBe(1);
+    journeyRuntime.position = 0;
   });
 
   it('Back to Earth jumps straight to the start under reduced motion', () => {
@@ -85,8 +86,7 @@ describe('FinaleLayer', () => {
     store.getState().goToEnd(0);
     show(true);
     fireEvent.click(screen.getByRole('button', { name: 'Back to Earth' }));
-    expect(store.getState().flight).toBeNull();
-    expect(store.getState().target).toBe(0);
+    expect(store.getState().flight).toMatchObject({ to: 0, duration: 0 });
   });
 
   it('registers its root for the camera rig, with a hidden bracket labelled Earth', () => {

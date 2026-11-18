@@ -1,12 +1,11 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { bootTracker } from '../boot/tracker';
 import { FINALE, STOPS } from '../content/journey';
-import { useAutoplay } from '../input/useAutoplay';
 import { useKeyboardInput } from '../input/useKeyboardInput';
 import { useTouchInput } from '../input/useTouchInput';
 import { useWheelInput } from '../input/useWheelInput';
 import { canUseWebGL } from '../scene/webgl';
-import { journeyStore, ROUTE } from '../store/journey';
+import { journeyStore, VOYAGE } from '../store/journey';
 import { BootLoader } from '../ui/BootLoader/BootLoader';
 import { FinaleLayer } from '../ui/Finale/FinaleLayer';
 import { Hud } from '../ui/Hud/Hud';
@@ -31,11 +30,10 @@ function VoyageApp() {
   const [perf] = useState(() => isPerf(window.location.search));
   const surface = useRef<HTMLElement>(null);
 
-  useWheelInput(journeyStore, STOPS.length);
+  useWheelInput(journeyStore);
   useKeyboardInput(journeyStore);
-  useTouchInput(journeyStore, surface, STOPS.length);
+  useTouchInput(journeyStore, surface);
   useAudio(journeyStore);
-  useAutoplay(journeyStore, STOPS, ROUTE.closePoints);
 
   return (
     <main ref={surface} className={styles.voyage}>
@@ -58,7 +56,7 @@ function VoyageApp() {
           ) : null}
           <DialogLayer stops={STOPS} />
           <FinaleLayer finale={FINALE} store={journeyStore} />
-          <Hud store={journeyStore} stops={STOPS} closePoints={ROUTE.closePoints} />
+          <Hud store={journeyStore} stops={STOPS} closePoints={VOYAGE.capture} />
           <BootLoader tracker={bootTracker.store} store={journeyStore} />
           <HiddenContent />
         </>

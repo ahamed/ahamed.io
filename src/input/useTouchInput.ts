@@ -1,29 +1,29 @@
 import { useEffect, type RefObject } from 'react';
-import { pixelsToProgress } from '../journey/input';
+import { eventRate, wheelIntensity } from '../journey/throttle';
 import type { JourneyStore } from '../store/journey';
 
-/** Vertical swipes on the voyage surface: swipe up moves forward. */
-export function useTouchInput(
-  store: JourneyStore,
-  surface: RefObject<HTMLElement | null>,
-  stopCount: number,
-): void {
+/** Vertical swipes on the voyage surface hold the throttle: swipe up moves forward. */
+export function useTouchInput(store: JourneyStore, surface: RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const element = surface.current;
     if (!element) return;
     let lastY: number | null = null;
+    let lastAt = -Infinity;
 
     const onStart = (event: TouchEvent) => {
       lastY = event.touches[0]?.clientY ?? null;
+      lastAt = performance.now();
     };
     const onMove = (event: TouchEvent) => {
       const y = event.touches[0]?.clientY;
       if (y === undefined || lastY === null) return;
       const dy = lastY - y;
       lastY = y;
-      store
-        .getState()
-        .nudge(pixelsToProgress(dy, window.innerHeight, stopCount), performance.now());
+      if (dy === 0) return;
+      const now = performance.now();
+      const intensity = wheelIntensity(eventRate(dy, now - lastAt));
+      lastAt = now;
+      store.getState().throttle(dy > 0 ? 1 : -1, intensity, now);
     };
     const onEnd = () => {
       lastY = null;
@@ -39,5 +39,5 @@ export function useTouchInput(
       element.removeEventListener('touchend', onEnd);
       element.removeEventListener('touchcancel', onEnd);
     };
-  }, [store, surface, stopCount]);
+  }, [store, surface]);
 }

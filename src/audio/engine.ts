@@ -3,6 +3,7 @@ import { droneParams } from './drone';
 import { buildDrone, buildPlasma } from './graph';
 import { createHissBuffer, hissParams, playHiss } from './hiss';
 import { plasmaParams } from './plasma';
+import { playTick, shouldTick, tickParams } from './tick';
 
 /** Time constant (s) of the mute ramp: about 0.15 s to silence, with no click. */
 const MUTE_TAU = 0.05;
@@ -19,6 +20,11 @@ export interface AudioEngine {
   blip: () => boolean;
   /** Plays a thruster hiss if started and not muted; returns whether it played. Never queues. */
   hiss: () => boolean;
+  /**
+   * Plays a key tick for `char` revealed at `now` (ms) if started, not muted, not whitespace and
+   * not within the rate cap of the last tick; returns whether it played.
+   */
+  tick: (char: string, now: number) => boolean;
   setMuted: (muted: boolean) => void;
   /** The plasma texture's level, 0..1 (see plasmaGain). */
   setPlasma: (level: number) => void;
@@ -31,8 +37,8 @@ interface Options {
 }
 
 /**
- * The voyage's sound: a master gain (mute) over the drone, the plasma texture, the blip and the
- * thruster hiss.
+ * The voyage's sound: a master gain (mute) over the drone, the plasma texture, the blip, the
+ * thruster hiss and the typewriter tick (which shares the hiss's noise buffer).
  */
 export function createAudioEngine({
   createContext = () => new AudioContext(),
@@ -42,6 +48,7 @@ export function createAudioEngine({
   let plasma: GainNode | null = null;
   let hissBuffer: AudioBuffer | null = null;
   let muted = false;
+  let lastTickAt = -Infinity;
   let plasmaLevel = 0;
   let scheduledPlasma = -1;
   const listeners = new Set<() => void>();
@@ -78,6 +85,14 @@ export function createAudioEngine({
     hiss: () => {
       if (!ctx || !master || !hissBuffer || muted) return false;
       playHiss(ctx, hiss, hissBuffer, master);
+      return true;
+    },
+    tick: (char, now) => {
+      if (!ctx || !master || !hissBuffer || muted || !shouldTick(char, now, lastTickAt)) {
+        return false;
+      }
+      lastTickAt = now;
+      playTick(ctx, tickParams(Math.random), hissBuffer, master);
       return true;
     },
     setMuted: (value) => {

@@ -8,9 +8,6 @@ export const TURN_END = 0.95;
 /** The caption and the contact card fade in over this range, after the turn. */
 const REVEAL_START = 0.95;
 const REVEAL_END = 0.99;
-/** Idle anywhere from here to the end snaps to the end, so the turn never rests half-done. */
-export const FINALE_SNAP_FROM = TURN_START;
-
 /** The Pale Blue Dot and its bracket show once the look-back turn is past this point. */
 export const DOT_FROM_TURN = 0.5;
 
@@ -31,11 +28,6 @@ export const finaleTurn = (p: number): number => smoothstep(TURN_START, TURN_END
 
 /** Opacity of the caption and the contact card at progress `p`. */
 export const finaleReveal = (p: number): number => smoothstep(REVEAL_START, REVEAL_END, p);
-
-/** The end of the route while `p` is inside the turn, otherwise null (no finale snap). */
-export function finaleSnap(p: number): number | null {
-  return p >= FINALE_SNAP_FROM && p < 1 ? 1 : null;
-}
 
 /**
  * Orbits the chase pose in `out` round `ship` by half a turn × `turn`, and blends its aim toward

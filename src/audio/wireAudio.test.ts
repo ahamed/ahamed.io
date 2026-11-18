@@ -14,6 +14,7 @@ function fakeEngine() {
     }),
     blip: vi.fn(() => started),
     hiss: vi.fn(() => started),
+    tick: vi.fn(() => started),
     setMuted: vi.fn(),
     setPlasma: vi.fn(),
     onStart: (listener: () => void) => {
@@ -56,7 +57,7 @@ describe('wireAudio', () => {
     store.getState().begin(0, { silent: false, reduced: true });
     store.getState().setOpenStop('earth');
     store.getState().setOpenStop('earth');
-    store.getState().nudge(0.01, 0);
+    store.getState().throttle(1, 0.1, 0);
     store.getState().setOpenStop(null);
     store.getState().setOpenStop('moon');
     expect(engine.blip).toHaveBeenCalledTimes(2);

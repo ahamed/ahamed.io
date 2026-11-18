@@ -7,6 +7,7 @@ import {
   MeshStandardMaterial,
   Points,
   Texture,
+  Vector3,
   type Scene,
   type Object3D,
 } from 'three';
@@ -18,6 +19,7 @@ import { thrusterLink } from '../../audio/thrusterLink';
 import { pulseTime } from './motion';
 import { VOYAGER_ORIENTATION, VOYAGER_SCALE } from './orientation';
 import { PARTS, REQUIRED_PARTS } from './parts';
+import { journeyRuntime, ROUTE } from '../../store/journey';
 import { Voyager } from './Voyager';
 
 const MOVING = ['scan', 'whip-l', 'whip-r', 'mag-tip'] as const;
@@ -111,6 +113,38 @@ describe('Voyager', () => {
       await renderer.unmount();
     },
   );
+
+  it('turns the dish to face the body it orbits, with a thruster puff, and back after', async () => {
+    stubReducedMotion(false);
+    const fire = vi.fn();
+    thrusterLink.fire = fire;
+    const moon = ROUTE.bodies[1];
+    if (!moon) throw new Error('no moon');
+    // On the lap, a quarter turn past the capture point: the Moon is off to the side.
+    journeyRuntime.ship[0] = moon.position[0] + 4;
+    journeyRuntime.ship[1] = 0;
+    journeyRuntime.ship[2] = moon.position[2];
+    journeyRuntime.captured = 1;
+    const renderer = await ReactThreeTestRenderer.create(<Voyager />);
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(4, 1 / 60);
+    });
+    expect(fire).toHaveBeenCalledTimes(1);
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(60, 1 / 20);
+    });
+    const orientation = findGroup(renderer.scene.instance, 'orientation');
+    const dish = new Vector3(0, 0, 1).applyQuaternion(orientation.quaternion);
+    expect(dish.x).toBeLessThan(-0.99);
+    journeyRuntime.captured = -1;
+    await ReactThreeTestRenderer.act(async () => {
+      await renderer.advanceFrames(60, 1 / 20);
+    });
+    expect(orientation.rotation.toArray().slice(0, 3)).toEqual([...VOYAGER_ORIENTATION]);
+    await renderer.unmount();
+    journeyRuntime.ship.fill(0);
+    thrusterLink.fire = () => undefined;
+  });
 
   it('signals each new thruster pulse once, and none from before it mounted', async () => {
     stubReducedMotion(false);

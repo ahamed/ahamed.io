@@ -220,3 +220,18 @@ export function placeDialog(input: PlacementInput): Placement {
 export function easeOffset(current: number, target: number, dt: number, reduced: boolean): number {
   return reduced ? target : damp(current, target, GLIDE_RATE, dt);
 }
+
+/** Width (px) of the screen column the docked dialog takes, margins included. */
+export const dockWidth = (dialogW: number, margin: number): number => dialogW + 2 * margin;
+
+/** Writes the docked dialog's top-left (orbit capture): left margin, vertically centred. */
+export function dockRectInto(
+  out: { x: number; y: number },
+  viewport: { w: number; h: number },
+  dialog: { w: number; h: number },
+  margin: number,
+): { x: number; y: number } {
+  out.x = margin;
+  out.y = Math.max(margin, (viewport.h - dialog.h) / 2);
+  return out;
+}

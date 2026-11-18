@@ -15,7 +15,7 @@ The dialog's state SHALL follow the body's apparent size on screen:
 - It SHALL close once the apparent size falls below a close threshold, which is lower than the open threshold, so the dialog doesn't flicker at the boundary.
 - It SHALL reopen when the visitor travels back and the open threshold is crossed again.
 
-At most one dialog SHALL be open at a time.
+At most one dialog SHALL be open at a time. While Voyager is captured in an orbit, the captured stop's dialog SHALL stay open at full scale and opacity whatever the body's size, and no other dialog SHALL open.
 
 #### Scenario: Opens on approach
 
@@ -39,7 +39,7 @@ At most one dialog SHALL be open at a time.
 
 ### Requirement: Terminal appearance and typewriter reveal
 
-The dialog SHALL be a translucent panel in `rgba(30, 58, 64, 0.72)`, with text in `#67D3C1` set in a monospace face. When it opens, its body text SHALL reveal character by character. The full text SHALL be in the accessibility tree from the moment the dialog opens.
+The dialog SHALL be a translucent panel in `rgba(30, 58, 64, 0.72)`, with text in `#67D3C1` set in a monospace face. For an unread stop, its body text SHALL reveal character by character, paced by the orbit clock: 60 characters per second at 1×, faster when scrolling raises the clock, up to 150 characters per second. The text of a read stop SHALL show fully typed when the dialog opens. The full text SHALL be in the accessibility tree from the moment the dialog opens.
 
 #### Scenario: Colours
 
@@ -50,6 +50,16 @@ The dialog SHALL be a translucent panel in `rgba(30, 58, 64, 0.72)`, with text i
 
 - **WHEN** a dialog has just opened and the typewriter reveal is still running
 - **THEN** the dialog exposes the full card title and body to assistive technology
+
+#### Scenario: Reveal follows the orbit clock
+
+- **WHEN** the Moon lap runs at 1× for 2 s
+- **THEN** about 120 characters of the Moon card are shown
+
+#### Scenario: Read card opens fully typed
+
+- **WHEN** the visitor passes the Moon again after its lap has ended
+- **THEN** the Moon dialog shows its whole text as soon as it opens
 
 ### Requirement: Dialog semantics
 
@@ -85,7 +95,7 @@ When a card has tech chips, the dialog SHALL show them below the card text as a 
 
 ### Requirement: Dialog keeps Voyager and its body uncovered
 
-On screens 768px wide and wider, the dialog SHALL be placed near its body at a spot that fits on screen and covers neither Voyager nor the body's disc. It SHALL try spots in this order and take the first that fits:
+On screens 768px wide and wider, outside an orbit capture (during capture it docks to the left edge, as orbit-capture defines), the dialog SHALL be placed near its body at a spot that fits on screen and covers neither Voyager nor the body's disc. It SHALL try spots in this order and take the first that fits:
 
 1. beside the body, on the side away from Voyager
 2. beside the body, on the other side
