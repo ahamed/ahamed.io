@@ -97,6 +97,16 @@ Every feature follows: OpenSpec proposal → `/grill-me` on the proposal → fai
 - **M9 Adaptive/a11y**: PerformanceMonitor quality tiers, mobile bottom sheet, reduced motion, Text mode + hidden semantic HTML, WebGL fallback. _Skills: threejs-performance_
 - **M10 Perf pass**: draw-call and memory budget (target 60 fps desktop, ≥30 fps mid phones), texture memory, disposal. _Skills: threejs-performance, threejs-asset-pipeline_
 
+### Story phase (M11–M15)
+
+`content-plan.md` holds the decisions, draft copy, owner-supplied numbers and mission-fact sources for these milestones. Read it before starting any of them. Voyager narrates a "second Golden Record" across 11 chapters (6 hero stories); the other bodies become flyby labels.
+
+- **M11 Story content**: split stops into `chapter` (narration, track data rows, teaser, optional full track, hero flag, act) and `flyby` (one line, optional link); a hero must have an Impact row; rewrite `journey.ts` from content-plan §5 with `// VERIFY` slots; text mode renders chapters, full tracks and flybys; flybys show as labels, and chapters keep today's dialog for now. Specs: journey-content, text-mode, stop-dialog.
+- **M12 Reading mechanics**: a chapter holds until the visitor scrolls on (never closes on a timer); autoplay dwells for words ÷ 175 wpm (min 8 s) with a countdown ring; only the header line types (body in ≤600 ms, ticks on the header only); split frame on desktop (body in the right third, card in a ~40% left column, scene dims ~20%, no new motion while open); next-body preview and teaser; wordless breath segment before the heliopause. Specs: orbit-capture, autoplay, stop-dialog, typewriter-sound, journey-navigation.
+- **M13 Depth and fast path**: "▶ Play full track" in-place expand that holds the voyage; always-visible ID strip (name · VP Engineering · 9 yrs · Tracks · Text mode · Contact); the progress map evolves into the track list (record sleeve) with jumps, ticks and flybys under each chapter. Specs: hud, stop-dialog.
+- **M14 Finale**: Voyager's closing line, record-sleeve summary, live-computed light-time line, fact line fixed to "from the Sun". Specs: finale.
+- **M15 Hidden signals**: 2–3 discoverable signals (Golden Record liner notes, Io plume anecdote, bonus track); "+n hidden signals" in the track list; no fact lives only in a signal.
+
 ## Scripts (package.json)
 
 `dev`, `build`, `preview`, `lint`, `lint:fix`, `format`, `typecheck` (`tsc -b --noEmit`), `test` (vitest run), `test:watch`, `e2e` (playwright), `textures` (gltf-transform/toktx KTX2 conversion).
